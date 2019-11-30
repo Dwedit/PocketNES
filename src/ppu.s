@@ -1995,7 +1995,6 @@ byte_reverse_table:
 
 .popsection
 
-
  .pushsection .vram1, "ax", %progbits
 
 sprite_zero_handler_2:

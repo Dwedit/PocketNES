@@ -24,7 +24,7 @@ int text1_str(int row);
 void dummy(void);
 //void dummy()
 //{
-//
+//	
 //}
 
 int print_1_func(int row,const char *src1,const char *src2)
@@ -215,7 +215,7 @@ void drawui1()
 	drawtext(18,"FOR TESTING ONLY",0);
 	drawtext(19,"DO NOT DISTRIBUTE",0);
 #endif
-
+	
 	#if CHEATFINDER
 	print_1_1("Cheat Finder->");
 	#endif
@@ -313,7 +313,7 @@ void drawui3()
 	print_2("Sprite Follow by: ",followtxt[(emuflags & 32)>>5]);		//MEMFOLLOW=32
 	print_2(followtxt2[(emuflags & 32)>>5],hex4(*((short*)((&scaling)+1))));
 	#endif
-
+	
 }
 // drawui4 moved to speedhack.c
 // drawui5 moved to cheat.c
@@ -414,7 +414,7 @@ void ui()
 //			drawuiX[mb]();
 			drawui1();
 	} while(!(key&(B_BTN+R_BTN+L_BTN)));
-
+	
 #if SAVE
 	if (get_sram_owner()==0)
 	{
@@ -624,7 +624,7 @@ void brightset()
 	if (gammavalue>4) gammavalue=0;
 	paletteinit();
 	//vblank routine automatically updates the palette now
-
+	
 	//PaletteTxAll();
 	//Update_Palette();
 }
@@ -785,9 +785,9 @@ void draw_input_text(int row, int column, char* str, int hilitedigit)
 	int i=0;
 	int map_add = 0x1000*FONT_PALETTE_NUMBER;
 	int map_add_hilite = map_add + 0x1000;
-
+	
 //	const int hilite=(1<<12)+0x4100,nohilite=0x4100;
-
+	
 	u16 *here;
 	row+=37;
 	row&=0x1F;
@@ -811,9 +811,9 @@ u32 inputhex(int row, int column, u32 value, u32 digits)
 	int key,tmp;
 	u32 digit,addthis;
 	digit=digits-1;
-
+	
 	draw_input_text(row,column,hexn(value,digits),digit);
-
+	
 	oldkey=~REG_P1;			//reset key input
 	do {
 		waitframe();		//(polling REG_P1 too fast seems to cause problems)
@@ -846,16 +846,16 @@ void inputtext(int row, int column, char *text, u32 length)
 	int key,tmp;//,fast;
 	u32 pos=0;
 	const u8 textrange=127-' ';
-
+	
 	draw_input_text(row,column,text,pos);
-
+	
 	oldkey=~REG_P1;			//reset key input
 	do {
 		waitframe();		//(polling REG_P1 too fast seems to cause problems)
 		tmp=~REG_P1;
 		key=(oldkey^tmp)&tmp;
 		oldkey=tmp;
-
+	
 		if (key&(RIGHT)) ++pos;
 		if (key&(LEFT))	pos+=(length-1);
 		pos%=length;
@@ -965,7 +965,7 @@ void go_multiboot()
 	int size;
 	int key;
 	int rom_size;
-
+	
 	if(pogoshell) rom_size=48+16+(*(u8*)(findrom(romnum)+48+4))*16*1024+(*(u8*)(findrom(romnum)+48+5))*8*1024;  //need to read this from ROM
 	else rom_size=sizeof(romheader)+*(u32*)(findrom(romnum)+32);
 	src=findrom(selectedrom);
@@ -986,7 +986,7 @@ void go_multiboot()
 		oldkey=~REG_P1;			//reset key input
 	}
 
-	memcpy32 (dest,src,size);
+	memcpy32(dest,src,size);
 	textstart=dest;
 	selectedrom=0;
 	loadcart(selectedrom,emuflags&0x300,0);

@@ -53,7 +53,7 @@ void swap_column(int col)
 {
 	int row;
 	if (col>=30) return;
-
+	
 	for (row=0;row<21;row++)
 	{
 		u16 from_vram=(SCREENBASE)[row*32+col];
@@ -72,7 +72,7 @@ void move_ui()
 		u32 current_col=(old_ui_x/8)&0x3F;
 		u32 new_col=(ui_x/8)&0x3F;
 		u32 col;
-
+		
 		if (current_col!=new_col)
 		{
 			int delta=(new_col-current_col)&0x3F;
@@ -162,9 +162,9 @@ void cls(int chrmap)
 	//1 = left, 2 = right, 4 = whichever is off the screen, 8 = whichever is on the screen
 	int i=0,len=0x200;
 	u32 *scr=(u32*)SCREENBASE;
-
+	
 	const u32 FILL_PATTERN = (FONT_MEM_FIRSTCHAR + FONT_PALETTE_NUMBER*0x1000)*0x10001;
-
+	
 	if ( (chrmap & 8) || ((chrmap & 1) && ui_x < 256) || ((chrmap & 2) &&  ui_x >= 256) )
 	{
 		len=0x540/4;
@@ -194,7 +194,7 @@ void drawtext(int row,const char *str,int hilite)
 		map_add+= hilite * 0x1000;
 		space = lookup_character(' ');
 		asterisk = lookup_character('*') + map_add;
-
+		
 		if (hilite>=0)
 		{
 			//leading asterisk
@@ -205,7 +205,7 @@ void drawtext(int row,const char *str,int hilite)
 		{
 			hilite=-hilite-1;
 		}
-
+		
 		while(str[i]>=' ' && i<29)
 		{
 			here[i]=(u16)(lookup_character(str[i])+map_add);

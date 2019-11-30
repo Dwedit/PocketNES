@@ -15,7 +15,7 @@ void redecompress()
 {
 	u8 *nesheader=rombase-16;
 	if (cartflags&TRAINER) nesheader-=512;
-
+	
 	ewram_owner_is_sram=0;
 	init_cache(nesheader,0);
 }
@@ -56,7 +56,7 @@ static void read_rom_header(u8 *nesheader)
 	rommask=romsize-1;
 
 	vrompages=nesheader[5];
-
+		
 	//round vrom pages up to next power of 2
 	if (vrompages>0)
 	{
@@ -72,7 +72,7 @@ static void read_rom_header(u8 *nesheader)
 	{
 		vrombase=NES_VRAM;
 	}
-
+	
 	vromsize=8*1024*(vrompages>0?vrompages:1);
 
 	if (vrompages>0)
@@ -84,7 +84,7 @@ static void read_rom_header(u8 *nesheader)
 	{
 		bankable_vrom=0;
 		has_vram=1;
-
+		
 		vram_page_mask=0xFF;
 		vram_page_base=0;
 	}
@@ -163,14 +163,14 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 //	u8 *p;
 	u8 *romname_p;
 	u8 *nesheader;
-
+	
 	if (emu_flags & EMUFLAGS_PALTIMING)
 	{
 		emu_flags |= EMUFLAGS_FPS50;
 	}
-
+	
 //	int i;
-
+	
 #if SAVE
 	if (called_from==1)
 	{
@@ -185,29 +185,29 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 #endif
 
 	Sound_hardware_reset();
-
+	
 	if (!do_not_reset_all)
 	{
 		reset_all();
 	}
-
+	
 	romnumber=rom_number;
 	emuflags=emu_flags;
-
+	
 	frameready=0;
 	firstframeready=0;
-
+	
 	/*
 	ASM pre-tasks:
 	reset_all
 	mark frame and firstframe as not ready
-
-
+	
+	
 	New tasks:
 	Take care of loading SRAM and finding out whether an initial savestate exists before decompressing
-
-
-
+	
+	
+	
 	C tasks:
 	clear memory blocks (nes ram, nes sram, mapperstate, 'low g man fix')
 	Read NES header
@@ -215,36 +215,36 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 	do all the init_cache stuff?
 	set up initial banks
 	hackflags?
-
+	
 	init sprite cache
-
-
+	
+	
 	ASM tasks:
 	set 'bg maps'
 	set scanline hooks and stuff
-
-
+	
+	
 	*/
-
+	
 	//?
 	bank6[0]=0xFF;
-
+	
 	romname_p=findrom(romnumber);
 	nesheader=romname_p+48;
-
+	
 	//?
 //	hackflags=0;
 //	hackflags3=!(emuflags&2);
 //	//force PPU hack on
 //	emuflags|=1;
-
+	
 	read_rom_header(nesheader);	//sets rombase
 
 	//Reset RAM, SRAM, etc...
 	memset32(NES_RAM,0,2048);
 	memset32(NES_SRAM,0,8192);
 	memset32(mapperstate,0,32);
-
+	
 	if (cartflags&TRAINER)
 	{
 		//FIXME: broken for compressed roms
@@ -272,7 +272,7 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 		#endif
 	}
 	#endif
-
+	
 	init_cache(nesheader,1);
 	init_sprite_cache();
 	loadcart_asm();
@@ -283,7 +283,7 @@ u8 *get_end_of_cache()
 {
 	int chr_table_size;
 	int prg_table_size;
-
+	
 	u8 *end_of_cache=end_of_exram;
 	if (!fourscreen)
 	{
@@ -311,6 +311,7 @@ u8 *get_end_of_cache()
 	end_of_cache-=chr_table_size;
 	prg_table_size=rompages*PRG_16*4;
 	end_of_cache-=prg_table_size;
+	
 	return end_of_cache;
 }
 #endif
@@ -321,12 +322,12 @@ void init_cache(u8* nes_header, int called_from)
 	//called_from:
 	// 0 = called from redecompress and we don't want to reset any memory
 	// 1 = called from Loadcart and we want to reset everything
-
+	
 	u32 comp_sig;
 	u32 prg_pos;
 	int comptype;  //0 = uncompressed, 1 = one chunk up to 192k, 2 = two 128k chunks, first chr
 	int doNotDecompress = do_not_decompress;
-
+	
 	//Declare the possible holes in VRAM to stick memory into
 	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
 	u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
@@ -334,23 +335,23 @@ void init_cache(u8* nes_header, int called_from)
 	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
 //	u8 *const vrom_bank_3=VRAM+0x12000; //continued from previous
 	u8 *const novrom_bank=VRAM+0x08000; //48k size
-
+	
 	u8 *const extra_nametables=VRAM+0x07000; //4-screen gets this
-
+	
 	u8* dest;
 	u8* cachebase;
 	u8* cache_end_of_rom;
-
+	
 	int i;
-
+	
 	u8 *end_of_cache=end_of_exram;
-
+	
 	int page_size;
-
+	
 	bool dont_use_turbo=false;
-
+	
 //	sprite_vram_in_use=0;
-
+	
 	dest=ewram_start;
 	u32 destValue = (u32)dest;
 	if ((u32)nes_header < 0x08000000)
@@ -360,16 +361,16 @@ void init_cache(u8* nes_header, int called_from)
 	destValue += 255;
 	destValue &= 0xFFFFFF00;
 	dest = (void*)destValue;
-
+	
 	page_size=get_prg_bank_size(mapper);
-
+	
 	comp_sig=*(u32*)(&nes_header[12]);
 	prg_pos=*(u32*)(&nes_header[8]);
 	prg_pos>>=8;
 	comptype=0;
 	if (comp_sig==0x33335041) comptype=1;
 	if (comptype==1 && prg_pos!=0) comptype=2;
-
+	
 	if (nes_header<(u8*)0x08000000 && comptype != 0)
 	{
 		//Do not try to decompress twice if this was run from Multiboot
@@ -381,7 +382,7 @@ void init_cache(u8* nes_header, int called_from)
 	if (called_from!=0)
 	{
 		stop_dma_interrupts();
-
+		
 		//clear VRAM
 		memset32((void*)0x06000000,0,0x2000);	//tiles 1
 		memset32((void*)0x06004000,0,0x2000);	//tiles 2
@@ -392,8 +393,8 @@ void init_cache(u8* nes_header, int called_from)
 			memset32((void*)0x06010000,0,0x8000);	//sprite VRAM and extra bank vram
 		}
 	}
-
-
+	
+	
 	//reset VRAM, VRAM4 if needed
 	if (called_from!=0)
 	{
@@ -406,28 +407,25 @@ void init_cache(u8* nes_header, int called_from)
 			memset32(NES_VRAM4,0,2048);
 		}
 	}
-
-	breakpoint();
+	
 	cachebase = dest;
-	breakpoint();
-
 	cache_end_of_rom=cachebase+192*1024;
-
+	
 	if (!fourscreen)
 	{
 		end_of_cache+=2048;
 	}
-
+	
 	if (vrompages>0)
 	{
 		int chr_table_size=vrompages*8*4;
 		int prg_table_size=rompages*PRG_16*4;
-
+		
 		if (mapper==TQROM)
 		{
 			chr_table_size*=2;
 		}
-
+		
 		if (has_vram==0)
 		{
 			//go 8192 ahead since there's no VRAM
@@ -436,7 +434,7 @@ void init_cache(u8* nes_header, int called_from)
 				end_of_cache+=8192;
 			}
 		}
-
+		
 		//vrom banks, each takes up 4 bytes, 8 of them per 8k
 		instant_chr_banks=(u8**)((u8*)end_of_cache-(chr_table_size));
 		//rombanks, each takes up 4 bytes, 2 of them per 16k
@@ -455,7 +453,7 @@ void init_cache(u8* nes_header, int called_from)
 		//don't overlap
 		end_of_cache=(u8*)instant_prg_banks;
 	}
-
+	
 	//do we have enough memory to store the ROM?
 	if (comptype != 0)
 	{
@@ -467,17 +465,15 @@ void init_cache(u8* nes_header, int called_from)
 		}
 		extern u8 __eheap_start[];
 		int maxSize = (end_of_cache - __eheap_start) + extraSize;
-		breakpoint();
 		if (totalSize > maxSize)
 		{
 			//refuse to decompress the ROM
 			doNotDecompress = 1;
 			breakpoint();
 		}
-		breakpoint();
 	}
-
-
+	
+	
 	//setup buffers
 	if (called_from==1)
 	{
@@ -496,7 +492,7 @@ void init_cache(u8* nes_header, int called_from)
 			_scrollbuff = (u32*)p;
 			p -= 240*4;
 			_dmascrollbuff = (u32*)p;
-
+			
 			p -= 240*2;
 			_dispcntbuff = (u16*)p;
 			_dmadispcntbuff = DISPCNTBUFF2;
@@ -519,27 +515,27 @@ void init_cache(u8* nes_header, int called_from)
 			_scrollbuff = (u32*)p;
 			p -= 240*4;
 			_dmascrollbuff = (u32*)p;
-
+			
 			p -= 240*2;
 			_dispcntbuff = (u16*)p;
 			_dmadispcntbuff = DISPCNTBUFF2;
 
 			reset_buffers();
-
+			
 			end_of_cache = p;
 		}
 	}
-
+	
 	if (vrompages==0)
 	{
 		assign_chr_pages(NES_VRAM,0,8);
 	}
-
+	
 	//assign pages!
 	{
 		u8 *_rombase, *_vrombase;
 		int prg_entries,chr_entries;
-
+		
 		if (comptype==0)
 		{
 			_rombase=nes_header+16;
@@ -566,7 +562,7 @@ void init_cache(u8* nes_header, int called_from)
 			chr_entries=8;
 		}
 		assign_chr_pages(_vrombase,0,chr_entries);
-
+		
 		if (comptype==2)
 		{
 			if (vrompages==0)
@@ -591,7 +587,7 @@ void init_cache(u8* nes_header, int called_from)
 					//assign page 01
 					assign_prg_pages2(novrom_bank,0,2*PRG_16);
 				}
-
+				
 			}
 			else
 			{
@@ -620,7 +616,7 @@ void init_cache(u8* nes_header, int called_from)
 				u8* compcopy;
 				stop_dma_interrupts();
 				//needresume=true;
-
+				
 				compcopy = mem_end - filesize;
 				//compcopy = end_of_cache - filesize;
 				memmove32(compcopy,compsrc,filesize);
@@ -635,13 +631,13 @@ void init_cache(u8* nes_header, int called_from)
 
 //				Two_Words temp;
 //				u8 *next_src, *next_dest;
-//
+//				
 //				//one chunk, 192k or smaller
 //				temp=depack_2(compsrc,compdest);
 //				next_src=(u8*)(temp.word1);
 //				next_dest=(u8*)(temp.word2);
-//
-//
+//				
+//				
 //				cache_end_of_rom=next_dest;
 			}
 			if (comptype==2)
@@ -664,10 +660,10 @@ void init_cache(u8* nes_header, int called_from)
 					//0123456789ABC EF D	- call "swapmem" to rearrange the banks
 					//finally:
 					//012D456789ABC EF 3	- swap bank 3 with D?  (why did we do this again?  I forgot?  Did it fix a game?)
-
+					
 					//for 32k bankswitching games: (01 bank in VRAM for speed)
 					//EF2D456789ABC 01 3	- move banks 01 into VRAM for speed!
-
+					
 					compdest-=32*1024;
 					//last 32k goes to VRAM
 					memcpy32(novrom_bank,compdest,32*1024);
@@ -683,9 +679,9 @@ void init_cache(u8* nes_header, int called_from)
 
 					//finaly swap page 3 and page D  (forgot why we did this)
 					simpleswap32(cachebase+3*16384,vrom_bank_2, 16384);
-
+					
 					cache_end_of_rom = 13*16384+cachebase;	//okay to do because 208K > 192K
-
+					
 					//is this a 32k switching game?  Swap page 0,1 with pages E,F
 					if (page_size==32)
 					{
@@ -742,30 +738,30 @@ void init_cache(u8* nes_header, int called_from)
 				if (pages_to_copy<=8)
 				{
 					int firstpage=0;
-
+					
 					memcpy_if_okay(cachebase,_rombase+firstpage*16384,pages_to_copy*16384);
 					assign_prg_pages2(cachebase,firstpage*PRG_16,pages_to_copy*PRG_16);
-
+					
 //					cachebase+=128*1024;
 				}
 				if (!doNotDecompress)
 				{
 					ewram_owner_is_sram=0;
 				}
-
+				
 			}
-
+			
 			if (comptype==0 || comptype==1)
 			{
 				int pages_to_copy=2;
 				int firstpage=rompages-2;
-
+				
 				if (rompages==1)
 				{
 					pages_to_copy=1;
 					firstpage=0;
 				}
-
+				
 				if (bankable_vrom==0 || vrompages==1)
 				{
 					if (page_size==32)
@@ -773,8 +769,8 @@ void init_cache(u8* nes_header, int called_from)
 						firstpage=0;
 						pages_to_copy=2;
 					}
-
-
+					
+					
 					memcpy_if_okay(novrom_bank,_rombase+firstpage*16384,pages_to_copy*16384);
 					assign_prg_pages2(novrom_bank,firstpage*PRG_16,pages_to_copy*PRG_16);
 					//sprite_vram_in_use=1;
@@ -794,7 +790,7 @@ void init_cache(u8* nes_header, int called_from)
 					memcpy_if_okay(vrom_bank_2,_rombase+firstpage*16384,pages_to_copy*16384);
 					assign_prg_pages2(vrom_bank_2,firstpage*PRG_16,pages_to_copy*PRG_16);
 					//sprite_vram_in_use=1;
-
+					
 					//If page size is 32k, nothing is in GBA VRAM,
 					//and NES VROM/VRAM is bankable, then copy 256 bytes before the page
 					//so that back branches from C0xx to BFxx work.  Fixes Arkista's Ring
@@ -820,7 +816,7 @@ void init_cache(u8* nes_header, int called_from)
 					//swap ROM page 7 with vram data
 					simpleswap_if_okay(rom_page_addr,vrom_bank_2,16384);
 					assign_prg_pages2(vrom_bank_2,firstpage*PRG_16,pages_to_copy*PRG_16);
-
+					
 					//new stuff: give 256 bytes to bank 6
 					b = rom_page_addr;
 					a = b + 256;
@@ -840,7 +836,7 @@ void init_cache(u8* nes_header, int called_from)
 		#endif
 
 	}
-
+	
 /*
 	if (vrompages>0)
 	{
@@ -854,8 +850,8 @@ void init_cache(u8* nes_header, int called_from)
 		vram_page_mask=0xFF;
 		vram_page_base=0;
 	}
-*/
-
+*/	
+	
 	#if MIXED_VRAM_VROM
 	if (mapper==74)
 	{
@@ -891,7 +887,7 @@ void init_cache(u8* nes_header, int called_from)
 		bankable_vrom=1;
 	}
 	#endif
-
+	
 	//finally get checksum
 	my_checksum=checksum(nes_header+16);
 
@@ -908,21 +904,21 @@ void init_cache(u8* nes_header, int called_from)
 		}
 	}
 #endif
-
-
+	
+	
 //	flushcache();
 //	preloadcache();
 //	usingcache=1;
 //	usingcompcache=0;
 	//finally: the cheat finder...
-
+	
 #if CHEATFINDER
 	if (called_from!=0)
 	{
 		setup_cheatfinder(cache_end_of_rom,1);	//remove cheatfinder if it doesn't fit
 	}
 #endif
-
+	
 	//fix VS games
 	paletteinit();
 
@@ -931,7 +927,7 @@ void init_cache(u8* nes_header, int called_from)
 	{
 		reset_buffers();
 	}
-
+	
 	//resume interrupt system
 	resume_interrupts();
 
@@ -946,7 +942,7 @@ void setup_cheatfinder(u8 *cache_end_of_rom, int mode)
 
 	const int cheatfinder_vars_size=8192+2048+(8192+2048)/8+900;	//12420
 	u8 *cheatfinder_location=end_of_cache-cheatfinder_vars_size;
-
+	
 	if (mode==0)
 	{
 		u8* next=cheatfinder_location;
@@ -968,7 +964,7 @@ void setup_cheatfinder(u8 *cache_end_of_rom, int mode)
 	}
 }
 #endif
-
+	
 
 void stop_dma_interrupts()
 {
@@ -978,7 +974,7 @@ void stop_dma_interrupts()
 	REG_DM1CNT_H=0;
 	REG_DM3CNT_H=0;
 	//REG_IME=0;
-
+	
 	REG_DISPCNT&=~0x0100; //disable BG 0
 	REG_DISPCNT&=~(7 | FORCE_BLANK); //force mode 0, and turn off force blank
 	REG_DISPCNT|=BG2_EN; //text on BG2
@@ -1020,7 +1016,7 @@ void swapmem (u32* A, u32 *B, u32 Asize) //for overlapping memory regions, size 
 		dw.doubleword = simpleswap32(A,B,Asize);
 		A = (u32*)dw.words.a;
 		B = (u32*)dw.words.b;
-
+		
 		//replaces this code:
 		//for (i=0;i<Asize;i++)
 		//{

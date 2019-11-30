@@ -2,7 +2,7 @@
 
 static __inline u32 CountLeadingZeroes(u32 i);
 static __inline u32 GetReciprocal(u32 divisor);
-static __inline int bytecmp(const u8 *p1, const u8 *p2, int size);
+int bytecmp(const u8 *p1, const u8 *p2, int size);
 const u8 * memchr_ ( const u8 * ptr, int value, int size);
 
 extern u16 SPEEDHACK_TEMP_BUF[48];
@@ -228,11 +228,11 @@ static const u8 *find_hack(const u8 *start_pc, const u8 *branchpc, const u8 *las
 	const int MAX_READS=16;
 	const int MAX_WRITES=16;
 	const int MAX_INCS=16;
-
+	
 	u16 *const incs= &SPEEDHACK_TEMP_BUF[0];
 	u16 *const reads= &SPEEDHACK_TEMP_BUF[16];
 	u16 *const writes= &SPEEDHACK_TEMP_BUF[32];
-
+	
 	int num_reads=0;
 	int num_writes=0;
 	int num_incs=0;
@@ -242,7 +242,7 @@ static const u8 *find_hack(const u8 *start_pc, const u8 *branchpc, const u8 *las
 
 	int math_a_okay=0;
 	int last_instruction_was_increment=0;
-
+	
 	const u8 *pc=start_pc;
 	if (start_pc==NULL) return NULL;
 	while (pc<branchpc)
@@ -322,7 +322,7 @@ static const u8 *find_hack(const u8 *start_pc, const u8 *branchpc, const u8 *las
 	}
 out_loop:
 	if (pc!=branchpc) return NULL;
-
+	
 	if ((*pc & 0x1F)==0x10) //if it's a branch
 	{
 		if (last_instruction_was_increment)
@@ -340,8 +340,8 @@ out_loop:
 	{
 		total_cycles+=3;
 	}
-
-
+	
+	
 	//check read and write list for collisions
 	if (num_reads!=0 && num_writes!=0)
 	{
@@ -380,7 +380,7 @@ bool quickhackfinder(const u8 *initpc, const u8 *lastbank, int hacknum)
 	const u8 *branchpc;
 	const u8 *hackpc;
 	const u8 *pc;
-
+	
 	pc=find_first_instruction(initpc,lastbank,&branchpc);
 	if (!pc) return false;
 	hackpc=find_hack(pc,branchpc,lastbank,hacknum);
@@ -440,14 +440,14 @@ bool game_specific_hack(const u8 *initpc, const u8 *lastbank, int hacknum)
 	int jumpdest;
 	int jumpsize;
 	const u8 *hackbase;
-
+	
 	jump=(const u8*)memchr_(initpc,0x4C,22);
 	if (!jump) return false;
 	jumppc=jump-lastbank;
 	jumpdest=jump[1]+jump[2]*256;
 	jumpsize=jumppc-jumpdest;
 	hackbase=jumpdest+lastbank;
-
+	
 	if (jumpsize==sizeof(capcom_speedhack))
 	{
 		if (0==bytecmp(hackbase,capcom_speedhack,sizeof(capcom_speedhack)))
@@ -491,7 +491,7 @@ bool game_specific_hack(const u8 *initpc, const u8 *lastbank, int hacknum)
 void speedhack_manager(const u8* initpc, const u8* lastbank, int hacknum)
 {
 	int hack_to_install;
-
+	
 	speedhack_T *sh=&speedhacks[hacknum];
 
 	hack_to_install=0;
@@ -500,7 +500,7 @@ void speedhack_manager(const u8* initpc, const u8* lastbank, int hacknum)
 		hack_to_install=1;
 	}
 
-
+	
 //	if (sh->hack_was_used)   //this check was moved to ASM
 //	{
 //		sh->frames_hack_not_used=0;
@@ -572,7 +572,7 @@ loop:
 	return result;
 }
 
-static __inline int bytecmp(const u8 *p1, const u8 *p2, int size)
+int bytecmp(const u8 *p1, const u8 *p2, int size)
 {
 	while (size > 0)
 	{

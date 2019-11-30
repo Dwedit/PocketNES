@@ -156,7 +156,7 @@ int bytecmp(const void *dst,const void *src,int count) {
 	int v=0;
 	const u8 *d = (const u8*)dst;
 	const u8 *s = (const u8*)src;
-
+	
 	do {
 		v=d[i]-s[i];
 		if (v!=0) return v;
@@ -198,10 +198,10 @@ void probe_sram_size()
 	u32 val1;
 	u32 val2;
 	u32 newval2;
-
+	
 	val1 = sram[0]+(sram[1]<<8)+(sram[2]<<16)+(sram[3]<<24);
 		val2 = sram2[0]+(sram2[1]<<8)+(sram2[2]<<16)+(sram2[3]<<24);
-
+		
 	if ((val1 == STATEID || val1 == STATEID2) && val2 == val1)
 	{
 		sram[0] = (val1^(STATEID^STATEID2)) & 0xFF;
@@ -224,7 +224,7 @@ void getsram() {		//copy GBA sram to BUFFER1
 	u8 *sram=MEM_SRAM;
 	u8 *buff1=buffer1;
 	u32 *p;
-
+	
 //	if (ewram_owner_is_sram==1)
 //	{
 //		if (bytecmp(buff1,sram,save_start)!=0)
@@ -243,7 +243,7 @@ void getsram() {		//copy GBA sram to BUFFER1
 			*p=STATEID;	//nope.  initialize
 			*(p+1)=0;
 			*(p+2)=0xFFFFFFFF;
-
+			
 			bytecopy(sram,buff1,12);
 		}
 		ewram_owner_is_sram=1;
@@ -276,7 +276,7 @@ int updatestates(int index,int erase,int type) {
 	u8 *dst=BUFFER1;
 	u8 *src=BUFFER2;
 	stateheader *newdata=(stateheader*)BUFFER3;
-
+	
 	getsram();
 
 	memcpy(src,dst,total);			//copy buffer1 to buffer2
@@ -287,7 +287,7 @@ int updatestates(int index,int erase,int type) {
 	//skip ahead to where we want to write
 	srcsize=((stateheader*)src)->size;
 	srctype=((stateheader*)src)->type;
-
+	
 	i=(srctype==type || (type==-1 && srctype!=CONFIGSAVE)  )?0:-1;
 	while(i<index && srcsize) {	//while (looking for state) && (not out of data)
 		dst+=srcsize;
@@ -334,9 +334,9 @@ int updatestates(int index,int erase,int type) {
 		total++;
 	}
 	bytecopy(MEM_SRAM,BUFFER1,total);	//copy to sram
-
+	
 	findconfig(); //config may move after altering the filesystem
-
+	
 	return 1;
 }
 
@@ -351,11 +351,11 @@ int twodigits(int n,char *s) {
 }
 
 void getstatetimeandsize(char *s,int time,u32 size,u32 freespace) {
-
+	
 	/////////012345678901234567890123456789
 	//        12:34:56 - 65535, free 65535
 	strcpy(s,"00:00:00 - ");
-
+	
 	twodigits(time/216000,s);
 	s+=3;
 	twodigits((time/3600)%60,s);
@@ -429,7 +429,7 @@ stateheader* drawstates(int menutype,int *menuitems,int *menuoffset, int needed_
 		total+=size;
 		sh=(stateheader*)((u8*)sh+size);
 	}
-
+	
 	freespace=save_start-total;
 
 	if(sel!=statecount) {//not <NEW>
@@ -442,11 +442,11 @@ stateheader* drawstates(int menutype,int *menuitems,int *menuoffset, int needed_
 		sh=(stateheader*)((u8*)BUFFER3);
 		time=sh->framecount;
 		selectedstatesize=sh->size;
-
+		
 		getstatetimeandsize(s,time,selectedstatesize,freespace);
 		drawtext(32+18,s,0);
 	}
-
+	
 	if(statecount)
 		drawtext(32+19,"Push SELECT to delete",0);
 	if(menutype==SAVEMENU) {
@@ -558,7 +558,7 @@ void savestatemenu() {
 	int offset=0;
 
 	//	ewram_owner_is_sram=1;  //getsram sets it
-
+	
 	i=savestate(BUFFER2);
 	compressstate(i,STATESAVE,BUFFER2,BUFFER1);
 
@@ -637,13 +637,13 @@ void cheatload()
 
 	if(!using_flashcart())
 		return;
-
+	
 	if (cheatfinder_cheats==NULL)
 	{
 		num_cheats=0;
 		return;
 	}
-
+	
 //	ewram_owner_is_sram=1;  //findstate sets it
 
 	i=findstate(checksum((u8*)romstart),CHEATLIST,&sh);
@@ -654,7 +654,7 @@ void cheatload()
 		lzo1x_decompress((u8*)(sh+1),cheatsize,BUFFER2,&cheatsize,NULL);
 		src=(u16*)BUFFER2;
 		dst=(u16*)(cheatfinder_cheats);
-
+		
 		// Write up to an extra byte.
 		for (i = 0; i < cheatsize/2+(cheatsize&1); i++)
 		{
@@ -753,7 +753,7 @@ int backup_nes_sram(int prompt_delete_menu)
 	stateheader *sh;
 	lzo_uint compressedsize;
 	u32 sum;
-
+	
 //	u32 chk = checksum(findrom(i)+sizeof(romheader)+16);
 
 	if(!using_flashcart())
@@ -896,19 +896,19 @@ u32 get_sram_owner()
 void setup_sram_after_loadstate() {
 	//previous SRAM owner?  Save the old SRAM.
 	backup_nes_sram(1);
-
+	
 	//does game use SRAM?
 	if(cartflags&2)
 	{
 		//the SRAM we want is in NES_SRAM, the sram stored at E000 doesn't matter
 		no_sram_owner();
-
+		
 		//copy NES_SRAM to real sram
 		bytecopy(MEM_SRAM+save_start,NES_SRAM,0x2000);
-
+		
 		//set owner
 		register_sram_owner();
-
+		
 		//back it up immediately?
 		backup_nes_sram(1);
 
@@ -1015,7 +1015,7 @@ void writeconfig()
 
 	if(!using_flashcart())
 		return;
-
+	
 //	if (config_position>=4 && config_position<save_start)
 //	{
 //		configdata *cfg3 = (void*)((u8*)MEM_SRAM + config_position);
@@ -1029,7 +1029,7 @@ void writeconfig()
 //			while (1);
 //		}
 //	}
-
+	
 
 	j =(scaling & 0xF);						//store current display type
 	j |= (gammavalue & 0x7)<<5;					//store current gamma value
@@ -1114,7 +1114,7 @@ void readconfig() {
 	i=findstate(0,CONFIGSAVE,(stateheader**)&cfg2);
 	if(i>=0) {
 		config_position=((u8*)cfg2)-((u8*)BUFFER1);
-
+		
 		i = cfg2->displaytype;					//restore display type
 		scaling = (i & 0xF);
 		gammavalue = (i & 0xE0)>>5;				//restore gamma value
@@ -1169,10 +1169,11 @@ void clean_nes_sram() {
 u32 checksum(u8 *p) {
 	u32 sum=0;
 	int i;
-
+	
 	const u32 AP33 = 0x33335041;  //'AP33' in hex
-
+	
 	//if rom is compressed, use the checksum from the header
+	//TODO: verify that this is not an unaligned load
 	if ( ((u32)(p)>=0x02000004) && *((u32*)(p-4)) == AP33)
 	{
 //		if (pogoshell)
@@ -1180,11 +1181,11 @@ u32 checksum(u8 *p) {
 //			//if it's pogoshell, we never computed this, so just return the currently loaded ROM checksum
 //			return my_checksum;
 //		}
-
+		
 		sum= ((*(p))<<0) | ((*(p+1))<<8) | ((*(p+2))<<16) | ((*(p+3))<<24);
 		return sum;
 	}
-
+	
 	for(i=0;i<128;i++) {
 		sum+=*p|(*(p+1)<<8)|(*(p+2)<<16)|(*(p+3)<<24);
 		p+=128;

@@ -84,18 +84,18 @@ void rommenu_frame(void)
 	romz = roms;
 	sel = selectedrom;
 	//opt = selected_rom_options;
-
+	
 	if (rommenu_state == APPEARING)
 	{
 		EMUinput=0;
-
+		
 		//move ui to the left (from 256)
 		if (ui_x > 0)
 		{
 			ui_x -= 32;
 			move_ui();
 		}
-
+		
 		if (ui_x <= 0 || ui_x > 256)
 		{
 			ui_x = 0;
@@ -103,12 +103,12 @@ void rommenu_frame(void)
 			rommenu_state = IN_MENU;
 		}
 	}
-
+	
 	if (rommenu_state == IN_MENU)
 	{
 		lastselected = sel;
 		AGBinput = ~REG_P1;
-
+		
 		key=getinput();
 		if (key&RIGHT)
 		{
@@ -130,7 +130,7 @@ void rommenu_frame(void)
 		}
 		if (sel < 0) sel += romz;
 		if (sel >= romz) sel -= romz;
-
+		
 		if (lastselected!=sel)
 		{
 			opt = drawmenu(sel);
@@ -149,21 +149,21 @@ void rommenu_frame(void)
 		{
 			rommenu_state = DISAPPEARING;
 		}
-
+		
 		//move UI to the right (to 256)
 		if (ui_x < 256)
 		{
 			int darkness;
 			ui_x += 32;
-
+			
 			darkness = 7 - ui_x / 32;
 			if (darkness < 0)
 			{
 				darkness = 0;
 			}
-
+			
 			setdarknessgs(darkness);
-
+			
 			move_ui();
 		}
 		if (ui_x >= 256 || ui_x < 0)
@@ -171,7 +171,7 @@ void rommenu_frame(void)
 			setdarknessgs(0);
 			ui_x = 256;
 			move_ui();
-
+			
 			if (rommenu_state == DISAPPEARING)
 			{
 				rommenu_state = FINISHED;
@@ -201,7 +201,7 @@ int drawmenu(int sel) {
 		move_ui();
 	} else {
 		int ui_row;
-
+		
 		ui_row = (160-roms*8)/2;
 		ui_row/=4;
 		if (ui_row&1)
@@ -260,9 +260,9 @@ u8 *find_nes_header(u8 *base)
 {
 	//look up to 256 bytes later for an INES header
 	u32 *p=(u32*)base;
-
+	
 	u32 nes_id=0x1a530000+ne;
-
+	
 	int i;
 	for (i=0;i<64;i++)
 	{
