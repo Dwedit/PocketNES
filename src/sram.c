@@ -142,13 +142,13 @@ bool sram_matches()
 }
 
 
-void bytecopy(u8 *dst,const u8 *src,int count) {
-	int i=0;
-	do {
-		dst[i]=src[i];
-		i++;
-	} while(--count);
-}
+//void bytecopy(u8 *dst,const u8 *src,int count) {
+//	int i=0;
+//	do {
+//		dst[i]=src[i];
+//		i++;
+//	} while(--count);
+//}
 
 /*
 int bytecmp(const void *dst,const void *src,int count) {

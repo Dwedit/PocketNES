@@ -278,7 +278,7 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 	loadcart_asm();
 }
 
-#if CHEATFINER
+#if CHEATFINDER
 u8 *get_end_of_cache()
 {
 	int chr_table_size;

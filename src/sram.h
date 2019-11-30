@@ -17,7 +17,7 @@ bool can_quickload(void);
 void loadstatemenu(void);
 void writeconfig(void);
 void readconfig(void);
-void bytecopy(u8 *dst,const u8 *src,int count);
+//void bytecopy(u8 *dst,const u8 *src,int count);
 void managesram(void);
 void savestatemenu(void);
 bool quickload(void);
