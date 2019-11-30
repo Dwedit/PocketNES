@@ -19,7 +19,6 @@
 	global_func run_mmc3
 	global_func mmc3_timeout_handler
 	global_func mmc3_set_next_timeout
-	global_func mapper_irq_handler
 	global_func mmc3_timeout_handler
 	global_func mmc3_screen_on
 	
@@ -534,12 +533,6 @@ mmc3_set_next_timeout:
 mmc3_cancel_timeout:
 	adrl_ r12,mapper_timeout
 	b remove_timeout
-
-mapper_irq_handler:
-	ldrb_ r0,wantirq
-	orr r0,r0,#IRQ_MAPPER
-	strb_ r0,wantirq
-	b CheckI	@@
 	
 	.popsection
 	

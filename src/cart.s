@@ -75,6 +75,8 @@
 	global_func mapCDEF_rshift_
 	global_func map89ABCDEF_rshift_
 	global_func chr01234567_rshift_
+	
+	global_func mapper_irq_handler
 
 	.if CARTSAVE
 	.global CachedConfig
@@ -1744,6 +1746,12 @@ render_tiles_2_loop:
 .unreq mask
 
 @----------------------------------------------------------------------------
+
+mapper_irq_handler:
+	ldrb_ r0,wantirq
+	orr r0,r0,#IRQ_MAPPER
+	strb_ r0,wantirq
+	b CheckI	@@
 
 @----------------------------------------------------------------------------
 
