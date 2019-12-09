@@ -245,6 +245,7 @@ void getsram() {		//copy GBA sram to BUFFER1
 			*(p+2)=0xFFFFFFFF;
 			
 			bytecopy(sram,buff1,12);
+			probe_sram_size();
 		}
 		ewram_owner_is_sram=1;
 	}
