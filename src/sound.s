@@ -52,6 +52,7 @@
 	global_func frame_sequencer_handler
 	global_func dmc_handler
 	global_func sound_reset
+	global_func sound_dummy
 
  PCMSTEP		= 3<<24
  PCMLIMIT	= 96<<24
@@ -139,7 +140,7 @@ pcm_mix:
 	orr r5,r0,r5,lsr#8
 	str r5,[r12],#4
 
-	b_long endmix
+	b_long2 endmix
 @----------------------------------------------------------------------------
 
  .align
@@ -199,7 +200,7 @@ pcm0:
 	subs r3,r3,#1			@pcmcount--
 	bmi pcm2
 	ldrb r2,[r1],#1			@next byte..
-	b_long pcm_mix
+	b_long2 pcm_mix
 endmix:
 	cmp r12,r4
 	blo pcm0
@@ -218,7 +219,7 @@ pcm1:				@PCM has stopped.  clear remaining sound buffer.
 	mov r1,#0
 	mov r0,r12
 	subs r2,r12,r4
-	blgt_long memset32
+	blgt_long2 memset32
 
 	cmp r3,#0x80000000		@if this was the 2nd pass (entire buffer is cleared),
 	bne pcmexit
@@ -404,7 +405,7 @@ frame_sequencer_handler:
 	movs r0,r0
 	subnes r0,r0,#1
 	strb_ r0,tri_linear
-	bl_long update_tri_volume
+	bl_long2 update_tri_volume
 
 	ldrb_ r0,frame_sequencer_step
 	add r1,r0,#1
@@ -456,7 +457,7 @@ _frame2:
 	subs r0,r0,#1
 	bmi 0f
 	strb_ r0,tri_length
-	bl_long update_tri_volume
+	bl_long2 update_tri_volume
 0:
 	@noise length
 	ldrb_ r0,reg_400C
@@ -640,7 +641,7 @@ update_sq1_volume_r0:
 	@if either now or previous was zero volume, write it immediately
 	movs r0,r0
 	movnes r2,r2
-	beq write_square_1
+	beq_long2 write_square_1
 	ldr_ r0,gba_timer_2
 	orr r0,r0,#0x400000
 	str r0,[r1,#REG_TM2CNT_L]	@enable timer IRQ
@@ -707,7 +708,7 @@ _4003w:
 	mov r12,lr
 	bl update_sq1_period	@also jumps to update_sq1_volume
 	mov lr,r12
-	b write_square_1  @reset the square phase
+	b_long2 write_square_1  @reset the square phase
 
 length_counter_table:
 	.byte 0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06
@@ -757,7 +758,7 @@ update_sq2_volume_r0:
 	@if either now or previous was zero volume, write it immediately
 	movs r0,r0
 	movnes r2,r2
-	beq write_square_2
+	beq_long2 write_square_2
 	ldr_ r0,gba_timer_3
 	orr r0,r0,#0x400000
 	str r0,[r1,#REG_TM3CNT_L]	@enable timer IRQ
@@ -824,7 +825,7 @@ _4007w:
 	mov r12,lr
 	bl update_sq2_period	@also calls update_sq2_volume
 	mov lr,r12
-	b write_square_2  @reset the square phase
+	b_long2 write_square_2  @reset the square phase
 
 @------------------------------------------------------------------------------
 @        Triangle
@@ -876,7 +877,7 @@ _400Bw:
 	strb_ r2,tri_period+1
 	
 	mov r12,lr
-	bl_long update_tri_volume
+	bl_long2 update_tri_volume
 	mov lr,r12
 	b update_tri_period
 
@@ -988,7 +989,7 @@ _4010w:
 	strh r2,[r0,r1]		@set timer0 rate
 	
 	stmfd sp!,{lr}
-	bl_long run_dmc_plus12
+	bl_long2 run_dmc_plus12
 	ldmfd sp!,{lr}
 
 _4010w_entry:
@@ -1120,7 +1121,7 @@ _4015w_check_dummy_read_done:
 	blne update_sq2_volume_r0
 	tst r12,#0x04
 	strneb_ zero_byte,tri_length
-	blne tri_off
+	blne_long2 tri_off
 	mov r0,#0
 	tst r12,#0x08
 	strneb_ zero_byte,noise_length
@@ -1145,13 +1146,13 @@ _4015w_check_dummy_read_done:
 	moveq r1,#-1
 	streq_ r1,pcmcount
 	@simulate this in the DMC channel too
-	bl_long run_dmc_plus12
+	bl_long2 run_dmc_plus12
 	mov r0,#0
 	str_ r0,dmc_length_counter
 	b 0f	@return
 1:	
 	@turning on DMC - simulate up to now first
-	bl_long run_dmc_plus12
+	bl_long2 run_dmc_plus12
 	
 	ldrb_ r0,pcmctrl+2
 	bl _4012w
@@ -1175,7 +1176,7 @@ _4015w_check_dummy_read_done:
 	str_ r0,dmc_length_counter
 @	moveq r2,#1
 	bleq_long dmc_steal_cycles
-	bl_long find_next_dmc_event
+	bl_long2 find_next_dmc_event
 0:
 	ldmfd sp!,{pc}
 
@@ -1584,6 +1585,8 @@ sound_reset:
 trianglewav:				@Remember this is 4-bit
 	.byte 0x76,0x54,0x32,0x10,0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF,0xFE,0xDC,0xBA,0x98
 
+.pool
+
 reset_sound_after_loadstate:
 	stmfd sp!,{r3-r12,lr}
 	ldr r10,=GLOBAL_PTR_BASE
@@ -1592,13 +1595,13 @@ reset_sound_after_loadstate:
 	bl _4000w @update sq1 duty
 	
 	bl update_sq1_period
-	bl write_square_1
+	bl_long2 write_square_1
 	
 	ldrb_ r0,reg_4004
 	bl _4004w @update sq2 duty
 	
 	bl update_sq2_period
-	bl write_square_2
+	bl_long2 write_square_2
 	
 	bl update_tri_period
 	
@@ -1610,6 +1613,7 @@ reset_sound_after_loadstate:
 
 	ldmfd sp!,{r3-r12,lr}
 	bx lr
+sound_dummy:
 
  .section .data.103, "w", %progbits
 sound_state:

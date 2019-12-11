@@ -10,6 +10,10 @@ EWRAM_BSS char do_not_reset_all=0;	//when loading an old savestate, do not call 
 
 EWRAM_BSS u32 my_checksum=0;	//set by init_cache, called by loadcart
 
+#if MAPPER_OVERLAYS
+APPEND void LoadMapperOverlay(int mapperNumber);
+#endif
+
 #if SAVE
 void redecompress()
 {
@@ -239,7 +243,11 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 //	emuflags|=1;
 	
 	read_rom_header(nesheader);	//sets rombase
-
+#if MAPPER_OVERLAYS
+	breakpoint();
+	LoadMapperOverlay(mapper_number);
+#endif	
+	
 	//Reset RAM, SRAM, etc...
 	memset32(NES_RAM,0,2048);
 	memset32(NES_SRAM,0,8192);
@@ -465,6 +473,7 @@ void init_cache(u8* nes_header, int called_from)
 		}
 		extern u8 __eheap_start[];
 		int maxSize = (end_of_cache - __eheap_start) + extraSize;
+		breakpoint();
 		if (totalSize > maxSize)
 		{
 			//refuse to decompress the ROM
@@ -611,6 +620,7 @@ void init_cache(u8* nes_header, int called_from)
 			rom_is_compressed=1;
 			ewram_owner_is_sram=0;
 
+			breakpoint();
 			if (compsrc<(u8*)0x08000000)
 			{
 				u8* compcopy;
@@ -619,6 +629,7 @@ void init_cache(u8* nes_header, int called_from)
 				
 				compcopy = mem_end - filesize;
 				//compcopy = end_of_cache - filesize;
+				breakpoint();
 				memmove32(compcopy,compsrc,filesize);
 				compsrc=compcopy;
 			}
@@ -646,6 +657,7 @@ void init_cache(u8* nes_header, int called_from)
 				//256k size!
 
 				//Do Last 128k
+				breakpoint();
 				depack(compsrc,compdest);
 
 				compdest+=128*1024;
@@ -672,6 +684,7 @@ void init_cache(u8* nes_header, int called_from)
 					memcpy32(vrom_bank_2,compdest,16*1024);
 
 					compsrc+=prg_pos;
+					breakpoint();
 					depack(compsrc,compdest);
 
 					//now rearrange first 5 with last 8
@@ -704,6 +717,7 @@ void init_cache(u8* nes_header, int called_from)
 					memcpy32(vrom_bank_0,compdest,8*1024);
 
 					compsrc+=prg_pos;
+					breakpoint();
 					depack(compsrc,compdest);
 
 					//now rearrange first 6 with last 8
@@ -1047,3 +1061,71 @@ void simpleswap (void* a_in, void* b_in, u32 size) //size in bytes, must be alig
 	}
 }
 */
+
+#if MAPPER_OVERLAYS
+
+APPEND_DATA const unsigned char MapperNumberOverlayList[] =
+{
+	4, 64, 74, 118, 119, 206, 245, 249, 100, 
+	18, 19, 69, 210, 100, 
+	16, 65, 163, 100, 
+	1, 15, 67, 105, 100, 
+	9, 10, 17, 22, 33, 42, 73, 75, 80, 228, 100, 
+	0, 2, 3, 7, 11, 32, 34, 40, 66, 68, 70, 71, 76, 77, 78, 79, 82, 86, 88, 92, 99, 151, 152, 180, 232, 100, 
+	21, 23, 24, 25, 26, 72, 85, 87, 93, 94, 97, 184, 100, 
+	5, 20, 
+};
+
+extern unsigned char __load_start_iwram0[], __load_start_iwram1[], __load_start_iwram2[],
+					__load_start_iwram3[], __load_start_iwram4[], __load_start_iwram5[],
+					__load_start_iwram6[], __load_start_iwram7[];
+
+extern unsigned char __iwram_overlay_start[];
+
+APPEND_DATA const unsigned char *const MapperOverlaySource[] =
+{
+	__load_start_iwram0,
+	__load_start_iwram1,
+	__load_start_iwram2,
+	__load_start_iwram3,
+	__load_start_iwram4,
+	__load_start_iwram5,
+	__load_start_iwram6,
+	__load_start_iwram7,
+};
+
+
+APPEND void LoadMapperOverlay(int mapperNumber)
+{
+	const unsigned char *p = MapperNumberOverlayList;
+	unsigned char *dest = __iwram_overlay_start;
+	const int DEFAULT_MAPPER_OVERLAY_NUMBER = 4;
+	const int MAPPER_OVERLAY_SIZE = 1768;
+	
+	int overlayNumber = 0;
+	while (true)
+	{
+		int m = *p++;
+		if (m == 20)
+		{
+			overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
+			break;
+		}
+		if (m == 100)
+		{
+			overlayNumber++;
+		}
+		if (m == mapperNumber)
+		{
+			break;
+		}
+	}
+	
+	const unsigned char *src = MapperOverlaySource[overlayNumber];
+	int size = MAPPER_OVERLAY_SIZE;
+	memcpy32(dest, src, size);
+}
+
+
+
+#endif

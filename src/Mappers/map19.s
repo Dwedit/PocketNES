@@ -1,11 +1,7 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(1)
 
 	global_func mapper19init
 	global_func mapper210init
@@ -59,12 +55,8 @@ map19_irq_handler:
 	ldr_ r0,counter
 	ldr r1,=0x7FFF
 	cmp r0,r1
-	bne_long _GO
-	
-	ldrb_ r0,wantirq
-	orr r0,r0,#IRQ_MAPPER
-	strb_ r0,wantirq
-	b_long CheckI
+	bne _GO
+	b_long mapper_irq_handler
 
 
 

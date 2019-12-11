@@ -3,13 +3,9 @@
 	.if LESSMAPPERS
 	.else
 
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(3)
 
 	global_func mapper15init
 

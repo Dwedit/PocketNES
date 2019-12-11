@@ -3,11 +3,7 @@
 	.if LESSMAPPERS
 	.else
 
- .align
- .pool
- .text
- .align
- .pool
+MAPPER_OVERLAY_TEXT(3)
 
 #include "../6502mac.h"
 

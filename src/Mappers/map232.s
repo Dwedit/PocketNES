@@ -1,12 +1,7 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
 #include "../6502mac.h"
 
+MAPPER_OVERLAY_TEXT(5)
 	global_func mapper232init
 
  mapbyte1 = mapperdata+0

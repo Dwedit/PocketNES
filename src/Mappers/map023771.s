@@ -1,10 +1,6 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
+
+MAPPER_OVERLAY_TEXT(5)
 
 	global_func mapper0init
 	global_func mapper2init
@@ -44,12 +40,7 @@ mapper180init:
 	mov pc,lr
 
 @----------------------------------------------------------------------------
- .align
- .pool
- .section .iwram, "ax", %progbits
- .subsection 7
- .align
- .pool
+MAPPER_OVERLAY(5)
 @----------------------------------------------------------------------------
 map71w:
 @	tst addy,#0x1000

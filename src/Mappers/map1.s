@@ -1,10 +1,6 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
+
+MAPPER_OVERLAY_TEXT(3)
 
 	global_func mapper1init
 
@@ -37,12 +33,7 @@ reset:
 
 	b_long promswitch
 @----------------------------------------------------------------------------
- .align
- .pool
- .section .iwram, "ax", %progbits
- .subsection 3
- .align
- .pool
+MAPPER_OVERLAY(3)
 @----------------------------------------------------------------------------
 write0:		@($8000-$9FFF)
 @----------------------------------------------------------------------------

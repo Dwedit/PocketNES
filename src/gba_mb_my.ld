@@ -245,19 +245,6 @@ SECTIONS
 		__data_end__  =  ABSOLUTE(.);
 	} >iwram = 0xff
 
-	.bss ALIGN(4) (NOLOAD) :
-	{
-		__bss_start__ = ABSOLUTE(.);
-		*(.dynbss)
-		*(.gnu.linkonce.b*)
-		*(.bss)
-		*(COMMON)
-		*(SORT_BY_NAME(.bss.*))
-		*(.bss*)
-		. = ALIGN(4);    /* REQUIRED. LD is flaky without it. */
-		__bss_end__ = ABSOLUTE(.);
-	}
-
 	__iwram_overlay_lma = __data_lma + SIZEOF(.data);
 
 	PROVIDE (edata = .);
@@ -281,7 +268,18 @@ SECTIONS
 
 	__iwram_overlay_end = LOADADDR(.iwram0) + SIZEOF(.iwram0)+SIZEOF(.iwram1)+SIZEOF(.iwram2)+SIZEOF(.iwram3)+SIZEOF(.iwram4)+SIZEOF(.iwram5)+SIZEOF(.iwram6)+SIZEOF(.iwram7)+SIZEOF(.iwram8)+SIZEOF(.iwram9);
 
-
+	.bss ALIGN(4) (NOLOAD) :
+	{
+		__bss_start__ = ABSOLUTE(.);
+		*(.dynbss)
+		*(.gnu.linkonce.b*)
+		*(.bss)
+		*(COMMON)
+		*(SORT_BY_NAME(.bss.*))
+		*(.bss*)
+		. = ALIGN(4);    /* REQUIRED. LD is flaky without it. */
+		__bss_end__ = ABSOLUTE(.);
+	}
 
 	/* new section: .vram1 */
 	__vram1_lma = __iwram_overlay_end;

@@ -275,6 +275,12 @@
 	.endm
 
 
+@Long Jump Macros:
+@There's branch and call variations for long, and long2.
+@Use "long" for jumps between ROM/IWRAM, and "long2" for jumps in and out of VRAM
+@"long" becomes regular jumps/calls in Multiboot builds
+@because you can jump between EWRAM and IWRAM without long jumps
+
  .if VERSION_IN_ROM
 	.macro bl_long label
 	mov lr,pc
@@ -609,5 +615,176 @@
 	bpl \label
 	.endm
  .endif
+
+	.macro bl_long2 label
+	mov lr,pc
+	ldr pc,=\label
+	.endm
+
+	.macro bleq_long2 label
+	moveq lr,pc
+	ldreq pc,=\label
+	.endm
+
+	.macro bllo_long2 label
+	movlo lr,pc
+	ldrlo pc,=\label
+	.endm
+
+	.macro blhi_long2 label
+	movhi lr,pc
+	ldrhi pc,=\label
+	.endm
+
+	.macro bllt_long2 label
+	movlt lr,pc
+	ldrlt pc,=\label
+	.endm
+
+	.macro blgt_long2 label
+	movgt lr,pc
+	ldrgt pc,=\label
+	.endm
+
+	.macro blle_long2 label
+	movle lr,pc
+	ldrle pc,=\label
+	.endm
+
+	.macro blge_long2 label
+	movge lr,pc
+	ldrge pc,=\label
+	.endm
+
+	.macro blne_long2 label
+	movne lr,pc
+	ldrne pc,=\label
+	.endm
+
+	.macro blcc_long2 label
+	movcc lr,pc
+	ldrcc pc,=\label
+	.endm
+
+	.macro blpl_long2 label
+	movpl lr,pc
+	ldrpl pc,=\label
+	.endm
+
+	.macro blx_long2 label
+	add lr,pc,#4
+	ldr r12,=\label
+	bx r12
+	.endm
+
+	.macro blxeq_long2 label
+	addeq lr,pc,#4
+	ldreq r12,=\label
+	bxeq r12
+	.endm
+
+	.macro blxlo_long2 label
+	addlo lr,pc,#4
+	ldrlo r12,=\label
+	bxlo r12
+	.endm
+
+	.macro blxhi_long2 label
+	addhi lr,pc,#4
+	ldrhi r12,=\label
+	bxhi r12
+	.endm
+
+	.macro blxlt_long2 label
+	addlt lr,pc,#4
+	ldrlt r12,=\label
+	bxlt r12
+	.endm
+
+	.macro blxgt_long2 label
+	addgt lr,pc,#4
+	ldrgt r12,=\label
+	bxgt r12
+	.endm
+
+	.macro blxne_long2 label
+	addne lr,pc,#4
+	ldrne r12,=\label
+	bxne r12
+	.endm
+
+	.macro blxcc_long2 label
+	addcc lr,pc,#4
+	ldrcc r12,=\label
+	bxcc r12
+	.endm
+
+	.macro blxpl_long2 label
+	addpl lr,pc,#4
+	ldrpl r12,=\label
+	bxpl r12
+	.endm
+
+	.macro blxmi_long2 label
+	addmi lr,pc,#4
+	ldrmi r12,=\label
+	bxmi r12
+	.endm
+
+	.macro b_long2 label
+	ldr pc,=\label
+	.endm
+
+	.macro bcc_long2 label
+	ldrcc pc,=\label
+	.endm
+
+	.macro bhs_long2 label
+	ldrhs pc,=\label
+	.endm
+
+	.macro beq_long2 label
+	ldreq pc,=\label
+	.endm
+
+	.macro bne_long2 label
+	ldrne pc,=\label
+	.endm
+
+	.macro blo_long2 label
+	ldrlo pc,=\label
+	.endm
+
+	.macro bhi_long2 label
+	ldrhi pc,=\label
+	.endm
+
+	.macro bgt_long2 label
+	ldrgt pc,=\label
+	.endm
+
+	.macro blt_long2 label
+	ldrlt pc,=\label
+	.endm
+
+	.macro bge_long2 label
+	ldrge pc,=\label
+	.endm
+
+	.macro ble_long2 label
+	ldrle pc,=\label
+	.endm
+
+	.macro bcs_long2 label
+	ldrcs pc,=\label
+	.endm
+
+	.macro bmi_long2 label
+	ldrmi pc,=\label
+	.endm
+
+	.macro bpl_long2 label
+	ldrpl pc,=\label
+	.endm
 
 	@.end

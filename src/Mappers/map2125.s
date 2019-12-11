@@ -1,17 +1,7 @@
-@ .align
-@ .pool
-@ .section .iwram, "ax", %progbits
-@ .subsection 3
-@ .align
-@ .pool
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(6)
 
 	global_func mapper21init
 	global_func mapper25init

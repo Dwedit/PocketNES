@@ -1,12 +1,7 @@
- .align
- .pool
- .section .iwram, "ax", %progbits
- .subsection 0
- .align
- .pool
-
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY(6)
 
 	.global KoLatch
 	.global KoLatchLo

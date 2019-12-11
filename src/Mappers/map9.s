@@ -1,11 +1,7 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(4)
 
 	global_func mapper9init
 	global_func mapper10init
@@ -106,12 +102,7 @@ mapper9BGcheck: @called from PPU.s, r0=FD-FF
 	strlob r0,[r1,addy,lsr#6]
 
 	mov pc,lr
- .align
- .pool
- .section .iwram, "ax", %progbits
- .subsection 99
- .align
- .pool
+MAPPER_OVERLAY(4)
 
 latchtbl: .skip 32
 @----------------------------------------------------------------------------

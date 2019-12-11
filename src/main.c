@@ -41,8 +41,7 @@ EWRAM_BSS u32 copiedfromrom=0;
 
 int strstr_(const char *str1, const char *str2);
 
-__attribute__((section(".append")))
-int main()
+APPEND int main()
 {
 	//set text_start (before moving the rom)
 	extern u8 __rom_end__[];
@@ -59,8 +58,15 @@ int main()
 	if (end_addr < 0x08000000 && copiedfromrom)
 	{
 		textstart += (0x08000000 - 0x02000000);
-	}
 
+#if COMPY
+		//simulate full multiboot for debugging  (DELETE LATER)
+		memcpy32((u8*)end_addr, textstart, 0x0203FBFC - end_addr);
+		textstart = (u8*)end_addr;
+		copiedfromrom = 0;
+#endif	
+
+	}
 	C_entry();
 	return 0;
 }
@@ -68,8 +74,7 @@ int main()
 #endif
 
 
-__attribute__((section(".append")))
-void C_entry()
+APPEND void C_entry()
 {
 	int i;
 	u32 temp;
@@ -245,13 +250,25 @@ void C_entry()
 	int vram1_size = ((((u8*)__vram1_end - (u8*)__vram1_start) - 1) | 3) + 1;
 	memcpy32((u32*)__vram1_start,(const u32*)__vram1_lma,vram1_size);
 	
-	//If multiboot, move ROM from textstart to heapstart
-	//u32 end_addr = (u32)(&__rom_end__);
-	if (copiedfromrom == 0 && (u32)textstart < 0x08000000 && textstart > ewram_start)
-	{
-		memmove32(ewram_start, textstart, 0x02040000 - (u32)textstart);
-		textstart = ewram_start;
-	}
+	//#if COMPY
+	////If multiboot, move appended ROM to the end of memory
+	//if (copiedfromrom == 0 && (u32)textstart < 0x08000000 && textstart > ewram_start)
+	//{
+	//	u32 romsize = *(u32*)(textstart+32);
+	//	u8 *dest = (u8*)0x02040000 - romsize;
+	//	breakpoint();
+	//	memmove32(dest, textstart, romsize);
+	//	textstart = dest;
+	//}
+	//#endif
+	
+	////If multiboot, move ROM from textstart to heapstart
+	////u32 end_addr = (u32)(&__rom_end__);
+	//if (copiedfromrom == 0 && (u32)textstart < 0x08000000 && textstart > ewram_start)
+	//{
+	//	memmove32(ewram_start, textstart, 0x02040000 - (u32)textstart);
+	//	textstart = ewram_start;
+	//}
 	
 	spriteinit();
 	stop_dma_interrupts();
@@ -292,8 +309,7 @@ void jump_to_rommenu()
 }
 
 //show splash screen
-__attribute__((section(".append")))
-void splash(const u16 *image) {
+APPEND void splash(const u16 *image) {
 	int i;
 
 	REG_DISPCNT=FORCE_BLANK;	//screen OFF
@@ -320,8 +336,7 @@ void splash(const u16 *image) {
 }
 
 #if COMPY
-__attribute__((section(".append")))
-void build_byte_reverse_table()
+APPEND void build_byte_reverse_table()
 {
 	extern const u8 byte_reverse_table_init[256];
 	extern u8 byte_reverse_table[256];

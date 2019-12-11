@@ -1,11 +1,7 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(0)
 
 	global_func mapper4init
 	global_func mapper74init
@@ -159,12 +155,8 @@ commandlist_249:
 	.endif
 
 @----------------------------------------------------------------------------
- .align
- .pool
- .section .vram1, "ax", %progbits
- .subsection 3
- .align
- .pool
+
+MAPPER_OVERLAY_VRAM
 
 write0_206:
 	@mapper 206 is a subset of MMC3 that lacks WRAM, can't change bank modes, and has no IRQs or mirroring control.
@@ -182,8 +174,9 @@ write0_even:
 	bxeq lr
 	tst addy,#0x80
 	beq romswitch
-	b_long write0_chr_base_switch
-	.pushsection .text, "ax", %progbits
+	b_long2 write0_chr_base_switch
+
+MAPPER_OVERLAY_TEXT(0)
 write0_chr_base_switch:
 
 			@CHR base switch (0000/1000)
@@ -199,7 +192,7 @@ write0_chr_base_switch:
 	bl_long updateBGCHR_  @@
 	ldmfd sp!,{r3-r7,lr}
 	bx lr
-	.popsection
+MAPPER_OVERLAY_VRAM
 w8001:
 	ldrb_ r1,cmd
 	tst r1,#0x80	@reverse CHR?
@@ -246,7 +239,7 @@ w8001_118_noalttest:
 
 	.if LESSMAPPERS
 	.else
-	.pushsection .text, "ax", %progbits
+MAPPER_OVERLAY_TEXT(0)
 cmd7_249:
 	mov r0,r2
 	mov addy,lr
@@ -258,7 +251,7 @@ cmd6_249:
 	mov addy,lr
 	bl_long unscramble3  @@
 	mov lr,addy
-	.popsection
+MAPPER_OVERLAY_VRAM
 	.endif
 cmd6:			@$8000/$C000 select
 	strb_ r0,bank0
@@ -267,20 +260,19 @@ romswitch:
 	ldrb_ r1,cmd
 	tst r1,#0x40
 	mov addy,lr
-	bne_long rs0
+	bne_long2 rs0
 
 	bl_long mapCD_  @@
 	ldrb_ r0,bank0
 	mov lr,addy
 	b_long map89_  @@
-	.pushsection .text, "ax", %progbits
+MAPPER_OVERLAY_TEXT(0)
 rs0:
 	bl_long map89_  @@
 	ldrb_ r0,bank0
 	mov lr,addy
 	b_long mapCD_
-	.popsection
-
+MAPPER_OVERLAY_VRAM
 
 @----------------------------------------------------------------------------
 write1:		@$A000-A001
@@ -318,7 +310,7 @@ write3:		@E000-E001
 	bx lr
 
 
-	.pushsection .text, "ax", %progbits
+	MAPPER_OVERLAY_TEXT(0)
 mmc3_ntsc_pal_reset:
 	@eq = NTSC
 	@lt = PAL
@@ -333,15 +325,14 @@ mmc3_ntsc_pal_reset:
 	ldrlt r1,=0xcd001	@0x10000000 / (319+11/16)
 	str_ r1,mmc3_scanline_divide
 	bx lr
-	.popsection
 	
-	.pushsection .iwram, "ax", %progbits
+	MAPPER_OVERLAY(0)
 mmc3_timeout_handler:
 	bl run_mmc3
 	bl mmc3_set_next_timeout
 	b _GO  @@
 
-	.pushsection .vram1, "ax", %progbits
+	MAPPER_OVERLAY_VRAM
 mmc3_screen_on:
 	ldr_ r2,cycles_to_run
 	sub r2,r2,cycles,asr#CYC_SHIFT
@@ -386,8 +377,8 @@ mmc3_screen_on:
 	cmp r0,addy
 	bxne lr
 	mov r0,#1
-	b_long mmc3_clock_irq_entry
-	.popsection
+	b_long2 mmc3_clock_irq_entry
+MAPPER_OVERLAY(0)
 
 run_mmc3:
 	@assumes timestamp is correct
@@ -534,13 +525,7 @@ mmc3_cancel_timeout:
 	adrl_ r12,mapper_timeout
 	b remove_timeout
 	
-	.popsection
-	
- .align
- .pool
- .text
- .align
- .pool
+MAPPER_OVERLAY_TEXT(0)
 
 cmd0_245:
 	tst r0,#2

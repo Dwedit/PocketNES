@@ -1,10 +1,6 @@
- .align
- .pool
- .text
- .align
- .pool
-
 #include "../equates.h"
+
+MAPPER_OVERLAY_TEXT(3)
 
 	global_func mapper11init
 	global_func mapper66init

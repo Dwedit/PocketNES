@@ -1,5 +1,7 @@
 #include "../equates.h"
 
+MAPPER_OVERLAY_TEXT(4)
+
 	.if LESSMAPPERS
 	.else
 

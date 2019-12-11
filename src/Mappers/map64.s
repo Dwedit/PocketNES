@@ -1,15 +1,11 @@
- .align
- .pool
- .text
- .align
- .pool
-
 	@IMPORT run_mmc3
 	@IMPORT mmc3_set_next_timeout
 	@IMPORT mmc3_ntsc_pal_reset
 	
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(0)
 
 	global_func mapper64init
 

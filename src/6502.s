@@ -22,6 +22,7 @@
 	global_func irq6502
 	global_func check_irq
 	global_func CheckI
+	global_func mapper_irq_handler
 	.global cpustate
 	.global rommap
 	.global frametotal
@@ -92,7 +93,7 @@ _00:@   BRK
 	add r0,r1,#1
 	push16			@save PC
 
-	encodeP (B+R)		@save P
+	encodeP (B_+R)		@save P
 
 	ldr r12,=IRQ_VECTOR
 	bl VecCont
@@ -124,7 +125,7 @@ _06:@   ASL $nn
 @----------------------------------------------------------------------------
 _08:@   PHP
 @----------------------------------------------------------------------------
-	encodeP (B+R)
+	encodeP (B_+R)
 	push8 r0
 	fetch 3
 @----------------------------------------------------------------------------
@@ -158,7 +159,7 @@ _10:@   BPL *
 	tst m6502_nz,#0x80000000
 	bne nobranch
 	ldrsb r0,[m6502_pc],#1
-	
+branchhack_back:
 	and r1,m6502_pc,#0xFF00
 	add m6502_pc,m6502_pc,r0
 	and r2,m6502_pc,#0xFF00
@@ -171,7 +172,7 @@ _10y:
 	ldrsb r0,[m6502_pc],#1
 	cmp r0,#-4
 	beq dobranchhack
-branchhack_back:
+_branchhack_back:
 	and r1,m6502_pc,#0xFF00
 	add m6502_pc,m6502_pc,r0
 	and r2,m6502_pc,#0xFF00
@@ -1244,6 +1245,11 @@ check_irq:
 _GO:
 @-----------------------------------------------------------
 	fetch 0
+
+mapper_irq_handler:
+	ldrb_ r0,wantirq
+	orr r0,r0,#IRQ_MAPPER
+	strb_ r0,wantirq
 @-----------------------------------------------------------
 CheckI:
 @-----------------------------------------------------------

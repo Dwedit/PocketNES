@@ -14,6 +14,8 @@ void LZ77UnCompVram(const void *source, void *dest);
 
 
 #define _const __attribute__ ((const))
+#define APPEND __attribute__((section(".append")))
+#define APPEND_DATA __attribute__((section(".append_data")))
 
 /*
 #ifndef __cplusplus

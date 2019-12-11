@@ -1,12 +1,9 @@
- .align
- .pool
- .text
- .align
- .pool
 
 	@IMPORT mapper_irq_handler
 #include "../equates.h"
 #include "../6502mac.h"
+
+MAPPER_OVERLAY_TEXT(1)
 
 	global_func mapper69init
 	global_func map69_handler

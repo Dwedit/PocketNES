@@ -26,6 +26,15 @@ SHIFT_8K = 13
 SHIFT_16K = 14
 SHIFT_32K = 15
 
+#if MAPPER_OVERLAYS
+#define MAPPER_OVERLAY(xxxx) .section .iwram##xxxx, "ax", %progbits
+#define MAPPER_OVERLAY_TEXT(xxxx) .section .iwram##xxxx, "ax", %progbits
+#else
+#define MAPPER_OVERLAY(xxxx) .section .iwram, "ax", %progbits
+#define MAPPER_OVERLAY_TEXT(xxxx) .text
+#endif
+#define MAPPER_OVERLAY_VRAM .section .vram1, "ax", %progbits
+
 /*
 @options
  REDUCED_FONT = 1

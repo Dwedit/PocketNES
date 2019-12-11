@@ -854,7 +854,7 @@ store_recent_tiles:
 	ldr_ r_tnum,recent_tilenum
 	ldrh r0,[r_tnum]
 	tst r0,#0x8000
-	bleq_long flush_recent_tiles
+	bleq_long2 flush_recent_tiles
 	mov tilesleft,#MAX_RECENT_TILES
 
 updatetiles:
@@ -863,7 +863,7 @@ updatetiles:
 @	mov zero,#0
 	mov tilenum,#0
 
-	b_long updatetiles_loop
+	b_long2 updatetiles_loop
 	.popsection
 
 updatetiles_loop:
@@ -2040,7 +2040,7 @@ sprite_zero_handler_2:
 	ldrb r4,[r4,#8]		@read second sprite byte
 	orrs r0,r0,r4		@combine them - r0 stays at this value for a while now.
 	beq nohit_A			@no sprite pixels?  no hit.
-	b_long 0f			@jump to next section
+	b_long2 0f			@jump to next section
 	.popsection
 0:
 	@X-flipping
@@ -2065,7 +2065,7 @@ sprite_zero_handler_2:
 	@        xxxxxxxx
 	
 	bics r0,r0,r3,lsl r2	@remove pixels from the sprite image
-	beq_long nohit_A		@if this erased the sprite pixels, no hit.
+	beq_long2 nohit_A		@if this erased the sprite pixels, no hit.
 0:
 	@clip right?
 	cmp r2,#248		@is sprite X < 248?
@@ -2084,7 +2084,7 @@ sprite_zero_handler_2:
 	@xxxxxxxx
 	
 	bics r0,r0,r3,lsr r4	@mask the sprite pixels
-	beq_long nohit_A		@if this erased the sprite pixels, no hit.
+	beq_long2 nohit_A		@if this erased the sprite pixels, no hit.
 0:
 	@may destroy everything but r0
 	@r0 = byte from sprite
@@ -2202,7 +2202,7 @@ sprite_zero_handler_2:
 	and r2,r2,#0x07
 	rsb r3,r2,#8
 	ands r0,r4,r0,lsl r3 @r3 = collision mask
-	beq_long nohit_B
+	beq_long2 nohit_B
 	
 	@count leading zeroes in r0
 	mov r1,#0
@@ -2226,7 +2226,7 @@ sprite_zero_handler_2:
 	ldr_ r0,sprite_zero_timestamp
 	add r1,r1,r0
 	adr r0,sprite_zero_handler_3
-	b_long 1f
+	b_long2 1f
 
 .pushsection .vram1, "ax", %progbits
 
@@ -2964,7 +2964,7 @@ skipdma:
 	bl_long display_bg
 	.endif
 	
-	bl_long run_palette
+	bl_long2 run_palette
 	
 0:
 	mov r0,#0
@@ -3282,7 +3282,7 @@ newframe_nes_vblank: 	@called at line 242
 @	bl bankbuffer_finish
 @--------------------------	
 	.if SPRITESCAN
-	bl_long spritescan
+	bl_long2 spritescan
 	.endif
 
 	.if DIRTYTILES
@@ -3291,7 +3291,7 @@ newframe_nes_vblank: 	@called at line 242
 	cmp r0,#2
 	mov r0,#0
 	strb_ r0,okay_to_run_nes_chr_update_this_frame
-	blne_long nes_chr_update
+	blne_long2 nes_chr_update
 	
 	.endif
 	
@@ -3331,7 +3331,7 @@ newframe_nes_vblank: 	@called at line 242
 	ldrb_ r0,palette_number
 	movs r0,r0
 	@if zero, store palette
-	bleq_long store_palette_force
+	bleq_long2 store_palette_force
 	
 	ldrb_ r0,palette_number
 	ldr_ r1,current_palette
@@ -3446,7 +3446,7 @@ nesoam_was_clean:
 	bmi 0f
 	
 	ldr_ r_tiles,recent_tiles
-	bl_long _render_recent_tiles
+	bl_long2 _render_recent_tiles
 	ldr_ r_tnum,recent_tilenum
 	mov r0,#0x8000
 	strh r0,[r_tnum]
@@ -3524,7 +3524,7 @@ dma_W:	@(4014)		sprite DMA transfer
 	
 	ldrb_ r12,oam_addr
 	movs r12,r12
-	bne_long 0f
+	bne_long2 0f
 	
 	b memcpy32
 	.popsection

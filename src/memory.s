@@ -53,7 +53,7 @@ empty_R:		@read bad address (error)
 	mov r0,addy,lsr#8
 void: @- - - - - - - - -empty function
 @	mov r0,#0	@VS excitebike liked this, read from $3DDE ($2006).
-	mov pc,lr
+@	mov pc,lr
 @----------------------------------------------------------------------------
 empty_W:		@write bad address (error)
 @----------------------------------------------------------------------------
