@@ -113,7 +113,40 @@ static void read_rom_header(u8 *nesheader)
 	vrommask=vromsize-1;
 }
 
+static const unsigned char prg_bank_size_table[] =
+{
+	4,64,69,100,
+	7,11,15,25,34,40,42,66,77,79,86,105,163,228,100,20
+};
 
+static int lookup_mapper_arr(int mapper, const unsigned char *p)
+{
+	int value = 0;
+	while (true)
+	{
+		int m = *p++;
+		if (m == mapper) break;
+		if (m == 100) value++;
+		if (m == 20) break;
+	}
+	return value;
+}
+
+static int get_prg_bank_size(int mapper)
+{
+	const unsigned char numbers[] = {8, 32, 16};
+	int banksize = numbers[lookup_mapper_arr(mapper, prg_bank_size_table)];
+	if (rompages == 2 ||
+		(mapper == 1 && rompages > 16) ||
+		(mapper == 1 && vrompages == 1))
+	{
+		banksize = 32;
+	}
+	return banksize;
+}
+
+
+#if 0
 static int get_prg_bank_size(int mapper)
 {
 	int page_size;
@@ -156,14 +189,14 @@ static int get_prg_bank_size(int mapper)
 	}
 	return page_size;
 }
+#endif
 
 
 
 
-
-void loadcart(int rom_number, int emu_flags, int called_from)
+void loadcart(int rom_number, int emu_flags, int loading_state)
 {
-	//called_from: 0 if called from loadstate, 1 if called from rom menu
+	//loading_state: 0 if called from loadstate, 1 if called from rom menu
 //	u8 *p;
 	u8 *romname_p;
 	u8 *nesheader;
@@ -176,7 +209,7 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 //	int i;
 	
 #if SAVE
-	if (called_from==1)
+	if (loading_state==1)
 	{
 		if(autostate&1)
 		{
@@ -244,7 +277,6 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 	
 	read_rom_header(nesheader);	//sets rombase
 #if MAPPER_OVERLAYS
-	breakpoint();
 	LoadMapperOverlay(mapper_number);
 #endif	
 	
@@ -265,7 +297,7 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 		NES_SRAM[0x1D7D]=0x7D;
 	}
 #if SAVE
-	if (called_from==1)
+	if (loading_state==1)
 	{
 		get_saved_sram();
 	}
@@ -273,7 +305,7 @@ void loadcart(int rom_number, int emu_flags, int called_from)
 
 	#if CHEATFINDER
 	setup_cheatfinder(NULL,0);
-	if (called_from==1)
+	if (loading_state==1)
 	{
 		#if SAVE
 		cheatload();
@@ -325,9 +357,9 @@ u8 *get_end_of_cache()
 #endif
 
 
-void init_cache(u8* nes_header, int called_from)
+void init_cache(u8* nes_header, int do_reset)
 {
-	//called_from:
+	//do_reset:
 	// 0 = called from redecompress and we don't want to reset any memory
 	// 1 = called from Loadcart and we want to reset everything
 	
@@ -387,7 +419,7 @@ void init_cache(u8* nes_header, int called_from)
 		hasrun=1;
 	}
 
-	if (called_from!=0)
+	if (do_reset!=0)
 	{
 		stop_dma_interrupts();
 		
@@ -404,7 +436,7 @@ void init_cache(u8* nes_header, int called_from)
 	
 	
 	//reset VRAM, VRAM4 if needed
-	if (called_from!=0)
+	if (do_reset!=0)
 	{
 		if (has_vram)
 		{
@@ -473,7 +505,6 @@ void init_cache(u8* nes_header, int called_from)
 		}
 		extern u8 __eheap_start[];
 		int maxSize = (end_of_cache - __eheap_start) + extraSize;
-		breakpoint();
 		if (totalSize > maxSize)
 		{
 			//refuse to decompress the ROM
@@ -484,7 +515,7 @@ void init_cache(u8* nes_header, int called_from)
 	
 	
 	//setup buffers
-	if (called_from==1)
+	if (do_reset==1)
 	{
 		if (!fourscreen)
 		{
@@ -620,7 +651,7 @@ void init_cache(u8* nes_header, int called_from)
 			rom_is_compressed=1;
 			ewram_owner_is_sram=0;
 
-			breakpoint();
+			//move to the end of EWRAM
 			if (compsrc<(u8*)0x08000000)
 			{
 				u8* compcopy;
@@ -629,7 +660,6 @@ void init_cache(u8* nes_header, int called_from)
 				
 				compcopy = mem_end - filesize;
 				//compcopy = end_of_cache - filesize;
-				breakpoint();
 				memmove32(compcopy,compsrc,filesize);
 				compsrc=compcopy;
 			}
@@ -927,7 +957,7 @@ void init_cache(u8* nes_header, int called_from)
 	//finally: the cheat finder...
 	
 #if CHEATFINDER
-	if (called_from!=0)
+	if (do_reset!=0)
 	{
 		setup_cheatfinder(cache_end_of_rom,1);	//remove cheatfinder if it doesn't fit
 	}
@@ -937,7 +967,7 @@ void init_cache(u8* nes_header, int called_from)
 	paletteinit();
 
 	//make sure DIPSCNT buffers aren't zeroed
-	if (called_from == 0)
+	if (do_reset == 0)
 	{
 		reset_buffers();
 	}
@@ -1073,7 +1103,7 @@ APPEND_DATA const unsigned char MapperNumberOverlayList[] =
 	9, 10, 17, 22, 33, 42, 73, 75, 80, 228, 100, 
 	0, 2, 3, 7, 11, 32, 34, 40, 66, 68, 70, 71, 76, 77, 78, 79, 82, 86, 88, 92, 99, 151, 152, 180, 232, 100, 
 	21, 23, 24, 25, 26, 72, 85, 87, 93, 94, 97, 184, 100, 
-	5, 20, 
+	5, 100, 20, 
 };
 
 extern unsigned char __load_start_iwram0[], __load_start_iwram1[], __load_start_iwram2[],
@@ -1097,35 +1127,14 @@ APPEND_DATA const unsigned char *const MapperOverlaySource[] =
 
 APPEND void LoadMapperOverlay(int mapperNumber)
 {
-	const unsigned char *p = MapperNumberOverlayList;
-	unsigned char *dest = __iwram_overlay_start;
 	const int DEFAULT_MAPPER_OVERLAY_NUMBER = 4;
 	const int MAPPER_OVERLAY_SIZE = 1768;
-	
-	int overlayNumber = 0;
-	while (true)
-	{
-		int m = *p++;
-		if (m == 20)
-		{
-			overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
-			break;
-		}
-		if (m == 100)
-		{
-			overlayNumber++;
-		}
-		if (m == mapperNumber)
-		{
-			break;
-		}
-	}
-	
+	int overlayNumber = lookup_mapper_arr(mapperNumber, MapperNumberOverlayList);
+	if (overlayNumber == 8) overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
+	unsigned char *dest = __iwram_overlay_start;
 	const unsigned char *src = MapperOverlaySource[overlayNumber];
 	int size = MAPPER_OVERLAY_SIZE;
 	memcpy32(dest, src, size);
 }
-
-
 
 #endif
