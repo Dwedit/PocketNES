@@ -439,6 +439,7 @@ bool game_specific_hack(const u8 *initpc, const u8 *lastbank, int hacknum)
 	int jumpsize;
 	const u8 *hackbase;
 	
+	//todo: prevent out of bounds memory access here?
 	jump=(const u8*)memchr_(initpc,0x4C,22);
 	if (!jump) return false;
 	jumppc=jump-lastbank;

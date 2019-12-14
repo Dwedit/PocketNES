@@ -205,6 +205,15 @@ void loadcart(int rom_number, int emu_flags, int loading_state)
 	{
 		emu_flags |= EMUFLAGS_FPS50;
 	}
+
+	
+	#if COMPY
+	if (_instant_prg_banks != NULL)
+	{
+		loadcart_asm();
+		return;
+	}
+	#endif
 	
 //	int i;
 	
@@ -223,10 +232,12 @@ void loadcart(int rom_number, int emu_flags, int loading_state)
 
 	Sound_hardware_reset();
 	
+	#if RESET_ALL
 	if (!do_not_reset_all)
 	{
 		reset_all();
 	}
+	#endif
 	
 	romnumber=rom_number;
 	emuflags=emu_flags;
@@ -356,100 +367,24 @@ u8 *get_end_of_cache()
 }
 #endif
 
-
-void init_cache(u8* nes_header, int do_reset)
+#if !COMPY
+static void init_cache_clear_vram()
 {
-	//do_reset:
-	// 0 = called from redecompress and we don't want to reset any memory
-	// 1 = called from Loadcart and we want to reset everything
-	
-	u32 comp_sig;
-	u32 prg_pos;
-	int comptype;  //0 = uncompressed, 1 = one chunk up to 192k, 2 = two 128k chunks, first chr
-	int doNotDecompress = do_not_decompress;
-	
-	//Declare the possible holes in VRAM to stick memory into
-	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
-	u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
-	u8 *const vrom_bank_1=VRAM+0x0E000; //8k size  (really 24k)
-	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
-//	u8 *const vrom_bank_3=VRAM+0x12000; //continued from previous
-	u8 *const novrom_bank=VRAM+0x08000; //48k size
-	
-	u8 *const extra_nametables=VRAM+0x07000; //4-screen gets this
-	
-	u8* dest;
-	u8* cachebase;
-	u8* cache_end_of_rom;
-	
-	int i;
-	
-	u8 *end_of_cache=end_of_exram;
-	
-	int page_size;
-	
-	bool dont_use_turbo=false;
-	
-//	sprite_vram_in_use=0;
-	
-	dest=ewram_start;
-	u32 destValue = (u32)dest;
-	if ((u32)nes_header < 0x08000000)
+	//clear VRAM
+	memset32((void*)0x06000000,0,0x2000);	//tiles 1
+	memset32((void*)0x06004000,0,0x2000);	//tiles 2
+	//memset32((void*)0x06006000,0,0x1000);	//tilemap (not 4-screen)  //disabled because it's now where scanline effect buffers go
+	if (!doNotDecompress)
 	{
-		destValue += 64;
-	}
-	destValue += 255;
-	destValue &= 0xFFFFFF00;
-	dest = (void*)destValue;
-	
-	page_size=get_prg_bank_size(mapper);
-	
-	comp_sig=*(u32*)(&nes_header[12]);
-	prg_pos=*(u32*)(&nes_header[8]);
-	prg_pos>>=8;
-	comptype=0;
-	if (comp_sig==0x33335041) comptype=1;
-	if (comptype==1 && prg_pos!=0) comptype=2;
-	
-	if (nes_header<(u8*)0x08000000 && comptype != 0)
-	{
-		//Do not try to decompress twice if this was run from Multiboot
-		static int hasrun=0;
-		if (hasrun) doNotDecompress = 1;
-		hasrun=1;
-	}
+		memset32((void*)0x06008000,0,0x8000);	//rest of VRAM
+		memset32((void*)0x06010000,0,0x8000);	//sprite VRAM and extra bank vram
+	}	
+}
+#endif
 
-	if (do_reset!=0)
-	{
-		stop_dma_interrupts();
-		
-		//clear VRAM
-		memset32((void*)0x06000000,0,0x2000);	//tiles 1
-		memset32((void*)0x06004000,0,0x2000);	//tiles 2
-		//memset32((void*)0x06006000,0,0x1000);	//tilemap (not 4-screen)  //disabled because it's now where scanline effect buffers go
-		if (!doNotDecompress)
-		{
-			memset32((void*)0x06008000,0,0x8000);	//rest of VRAM
-			memset32((void*)0x06010000,0,0x8000);	//sprite VRAM and extra bank vram
-		}
-	}
-	
-	
-	//reset VRAM, VRAM4 if needed
-	if (do_reset!=0)
-	{
-		if (has_vram)
-		{
-			memset32(NES_VRAM,0,8192);
-		}
-		if (fourscreen==true)
-		{
-			memset32(NES_VRAM4,0,2048);
-		}
-	}
-	
-	cachebase = dest;
-	cache_end_of_rom=cachebase+192*1024;
+static u8* allocate_end_variables(int do_reset)
+{
+	u8 *end_of_cache=end_of_exram;
 	
 	if (!fourscreen)
 	{
@@ -494,6 +429,411 @@ void init_cache(u8* nes_header, int do_reset)
 		end_of_cache=(u8*)instant_prg_banks;
 	}
 	
+	//setup buffers
+	if (do_reset==1)
+	{
+		stop_dma_interrupts();
+		if (!fourscreen)
+		{
+			u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+			u8 *const extra_nametables=VRAM+0x07000; //4-screen gets this
+			//place scanline buffers into ram otherwise occupied by other 2 nametables
+			u8 * p= extra_nametables + 0x1000;
+			p -= 164*4;
+			_dma0buff = (u32*)p;
+			p -= 164*2;
+			_dma1buff = (u16*)p;
+			p -= 164*2;
+			_dma3buff = (u16*)p;
+
+			p -= 240*4;
+			_scrollbuff = (u32*)p;
+			p -= 240*4;
+			_dmascrollbuff = (u32*)p;
+			
+			p -= 240*2;
+			_dispcntbuff = (u16*)p;
+			_dmadispcntbuff = DISPCNTBUFF2;
+
+			reset_buffers();
+			//880 bytes free in that vram block
+		}
+		else
+		{
+			//place scanline buffers into EWRAM, or if there is VRAM available, put them there?
+			u8 * p = end_of_cache;
+			p -= 164*4;
+			_dma0buff = (u32*)p;
+			p -= 164*2;
+			_dma1buff = (u16*)p;
+			p -= 164*2;
+			_dma3buff = (u16*)p;
+
+			p -= 240*4;
+			_scrollbuff = (u32*)p;
+			p -= 240*4;
+			_dmascrollbuff = (u32*)p;
+			
+			p -= 240*2;
+			_dispcntbuff = (u16*)p;
+			_dmadispcntbuff = DISPCNTBUFF2;
+
+			reset_buffers();
+			
+			end_of_cache = p;
+		}
+	}
+	return end_of_cache;
+}
+
+static void assign_pages(int comptype, u8 *_rombase, int page_size)
+{
+	if (vrompages==0)
+	{
+		assign_chr_pages(NES_VRAM,0,8);
+	}
+	
+	//assign pages!
+	u8 *_vrombase;
+	int prg_entries,chr_entries;
+	
+	if (cartflags&TRAINER)
+	{
+		_rombase+=512;
+	}
+	
+	prg_entries=rompages*PRG_16;
+	assign_prg_pages(_rombase,0,prg_entries);
+	
+	_vrombase=_rombase+rompages*16384;
+	chr_entries=vrompages*8;
+	if (vrompages==0)
+	{
+		_vrombase=NES_VRAM;
+		chr_entries=8;
+	}
+	assign_chr_pages(_vrombase,0,chr_entries);
+	
+	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+	u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
+	u8 *const vrom_bank_1=VRAM+0x0E000; //8k size  (24k with vrom_bank_2 folllowing it)
+	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
+	u8 *const novrom_bank=VRAM+0x08000; //48k size
+
+	if (comptype==2)
+	{
+		if (vrompages==0)
+		{
+			if (page_size != 32)
+			{
+				//assign page 3
+				assign_prg_pages2(vrom_bank_2, 3*PRG_16,PRG_16);
+				//assign page D
+				assign_prg_pages2(_rombase+16384*3,13*PRG_16,PRG_16);
+				//assign page EF
+				assign_prg_pages2(novrom_bank,14*PRG_16,2*PRG_16);
+			}
+			else
+			{
+				//assign page 3
+				assign_prg_pages2(vrom_bank_2,3*PRG_16,PRG_16);
+				//assign page D
+				assign_prg_pages2(_rombase+16384*3,13*PRG_16,PRG_16);
+				//assign page EF
+				assign_prg_pages2(_rombase,14*PRG_16,2*PRG_16);
+				//assign page 01
+				assign_prg_pages2(novrom_bank,0,2*PRG_16);
+			}
+
+		}
+		else
+		{
+			//assign page E (8k)
+			assign_chr_pages2(vrom_bank_0,96,8);
+			//assign page EF (24k)
+			assign_chr_pages2(vrom_bank_1,104,24);
+		}
+	}	
+}
+
+static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comptype)
+{
+	u8* compsrc=nes_header+20;
+	u8* compdest=cachebase;
+	u8* mem_end=(u8*)0x02040000;
+	u8* cache_end_of_rom;
+
+	u32 filesize= *(u32*)(&nes_header[-16]);
+	filesize=((filesize-1)|3)+1;
+	filesize-=16;
+	
+	u32 prg_pos=*(u32*)(&nes_header[8]) >> 8;
+	
+	rom_is_compressed=1;
+	ewram_owner_is_sram=0;
+
+	//move to the end of EWRAM
+	if (compsrc<(u8*)0x08000000)
+	{
+		u8* compcopy;
+		stop_dma_interrupts();
+		//needresume=true;
+
+		compcopy = mem_end - filesize;
+		//compcopy = end_of_cache - filesize;
+		memmove32(compcopy,compsrc,filesize);
+		compsrc=compcopy;
+	}
+
+	if (comptype==1)
+	{
+		//one chunk, 192k or smaller
+		depack(compsrc,compdest);
+		cache_end_of_rom=192*1024+cachebase;
+
+//				Two_Words temp;
+//				u8 *next_src, *next_dest;
+//				
+//				//one chunk, 192k or smaller
+//				temp=depack_2(compsrc,compdest);
+//				next_src=(u8*)(temp.word1);
+//				next_dest=(u8*)(temp.word2);
+//				
+//				
+//				cache_end_of_rom=next_dest;
+	}
+	if (comptype==2)
+	{
+		u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+		u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
+		u8 *const vrom_bank_1=VRAM+0x0E000; //8k size  (really 24k)
+		u8 *const vrom_bank_2=VRAM+0x10000; //16k size
+	//	u8 *const vrom_bank_3=VRAM+0x12000; //continued from previous
+		u8 *const novrom_bank=VRAM+0x08000; //48k size
+
+
+//				sprite_vram_in_use=1;
+		//256k size!
+
+		//Do Last 128k
+		breakpoint();
+		depack(compsrc,compdest);
+
+		compdest+=128*1024;
+		if (vrompages==0)
+		{
+			//first, after calling depack on last 128k, we have this:
+			//89ABCDEF
+			//89ABC EF D			- copy banks EF and D into VRAM
+			//then:
+			//89ABC01234567 EF D	- decompress banks 01234567 into 5th slot
+			//then:
+			//0123456789ABC EF D	- call "swapmem" to rearrange the banks
+			//finally:
+			//012D456789ABC EF 3	- swap bank 3 with D?  (why did we do this again?  I forgot?  Did it fix a game?)
+
+			//for 32k bankswitching games: (01 bank in VRAM for speed)
+			//EF2D456789ABC 01 3	- move banks 01 into VRAM for speed!
+
+			compdest-=32*1024;
+			//last 32k goes to VRAM
+			memcpy32(novrom_bank,compdest,32*1024);
+			compdest-=16*1024;
+			//now last 16k goes to VRAM, but that will change, we'll be putting C000-10000 into vram eventually
+			memcpy32(vrom_bank_2,compdest,16*1024);
+
+			compsrc+=prg_pos;
+			breakpoint();
+			depack(compsrc,compdest);
+
+			//now rearrange first 5 with last 8
+			swapmem(cachebase+16384*5,cachebase, 8*16384);
+
+			//finaly swap page 3 and page D  (forgot why we did this)
+			simpleswap32(cachebase+3*16384,vrom_bank_2, 16384);
+
+			cache_end_of_rom = 13*16384+cachebase;	//okay to do because 208K > 192K
+
+			//is this a 32k switching game?  Swap page 0,1 with pages E,F
+			if (page_size==32)
+			{
+				simpleswap32(novrom_bank, cachebase, 32768);
+			}
+		}
+		else
+		{
+			//first, after calling depack on last 128k, we have this:
+			//89ABCDEF
+			//89ABCD E F			- copy banks E and F into VRAM
+			//then:
+			//89ABCD01234567 E F	- extract banks 01234567 into 6th slot
+			//finally:
+			//0123456789ABCD E F	- call "swapmem" to rearrange the banks
+
+			compdest-=24*1024;
+			memcpy32(vrom_bank_1,compdest,24*1024);
+			compdest-=8*1024;
+			memcpy32(vrom_bank_0,compdest,8*1024);
+
+			compsrc+=prg_pos;
+			breakpoint();
+			depack(compsrc,compdest);
+
+			//now rearrange first 6 with last 8
+			swapmem( cachebase+16384*6, cachebase, 8*16384);
+
+			cache_end_of_rom = 14*16384+cachebase;	//okay because 224K > 192K
+		}
+	}
+	if (compsrc<(u8*)0x08000000)
+	{
+		//cleanup
+		reset_buffers();
+		cls(4);
+		assign_pages(comptype, cachebase, page_size);
+		//init_cache(nes_header, 0);
+		//return;
+	}
+	return cache_end_of_rom;
+	
+}
+
+void init_cache(u8* nes_header, int do_reset)
+{
+	//do_reset:
+	// 0 = called from redecompress and we don't want to reset any memory
+	// 1 = called from Loadcart and we want to reset everything
+	
+	u32 comp_sig;
+	u32 prg_pos;
+	int comptype;  //0 = uncompressed, 1 = one chunk up to 192k, 2 = two 128k chunks, first chr
+	int doNotDecompress = do_not_decompress;
+	
+	//Declare the possible holes in VRAM to stick memory into
+	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+	u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
+	u8 *const vrom_bank_1=VRAM+0x0E000; //8k size  (really 24k)
+	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
+//	u8 *const vrom_bank_3=VRAM+0x12000; //continued from previous
+	u8 *const novrom_bank=VRAM+0x08000; //48k size
+	
+	u8 *const extra_nametables=VRAM+0x07000; //4-screen gets this
+	
+	u8* dest;
+	u8* cachebase;
+	u8* cache_end_of_rom;
+	
+	int i;
+	
+	//u8 *end_of_cache=end_of_exram;
+	
+	int page_size;
+	
+	bool dont_use_turbo=false;
+	
+//	sprite_vram_in_use=0;
+	
+	dest=ewram_start;
+	u32 destValue = (u32)dest;
+	if ((u32)nes_header < 0x08000000)
+	{
+		destValue += 64;
+	}
+	destValue += 255;
+	destValue &= 0xFFFFFF00;
+	dest = (void*)destValue;
+	
+	page_size=get_prg_bank_size(mapper);
+	
+	comp_sig=*(u32*)(&nes_header[12]);
+	prg_pos=*(u32*)(&nes_header[8]);
+	prg_pos>>=8;
+	comptype=0;
+	if (comp_sig==0x33335041) comptype=1;
+	if (comptype==1 && prg_pos!=0) comptype=2;
+	
+	if (nes_header<(u8*)0x08000000 && comptype != 0)
+	{
+		//Do not try to decompress twice if this was run from Multiboot
+		static int hasrun=0;
+		if (hasrun)
+		{
+			//return;
+			doNotDecompress = 1;
+		}
+		hasrun=1;
+	}
+
+	if (do_reset!=0)
+	{
+		stop_dma_interrupts();
+		#if !COMPY
+		init_cache_clear_vram();
+		#endif
+	}
+	
+	//reset VRAM, VRAM4 if needed
+	if (do_reset!=0)
+	{
+		if (has_vram)
+		{
+			memset32(NES_VRAM,0,8192);
+		}
+		if (fourscreen==true)
+		{
+			memset32(NES_VRAM4,0,2048);
+		}
+	}
+	
+	cachebase = dest;
+	cache_end_of_rom=cachebase+192*1024;
+	
+	u8 *end_of_cache = allocate_end_variables(do_reset);
+	/*
+	if (!fourscreen)
+	{
+		end_of_cache+=2048;
+	}
+	
+	if (vrompages>0)
+	{
+		int chr_table_size=vrompages*8*4;
+		int prg_table_size=rompages*PRG_16*4;
+		
+		if (mapper==TQROM)
+		{
+			chr_table_size*=2;
+		}
+		
+		if (has_vram==0)
+		{
+			//go 8192 ahead since there's no VRAM
+			if (!fourscreen)
+			{
+				end_of_cache+=8192;
+			}
+		}
+		
+		//vrom banks, each takes up 4 bytes, 8 of them per 8k
+		instant_chr_banks=(u8**)((u8*)end_of_cache-(chr_table_size));
+		//rombanks, each takes up 4 bytes, 2 of them per 16k
+		instant_prg_banks=(u8**)((u8*)instant_chr_banks-(prg_table_size));
+		//don't overlap
+		end_of_cache=(u8*)instant_prg_banks;
+	}
+	else
+	{
+		int chr_table_size=8*4;
+		int prg_table_size=rompages*PRG_16*4;
+		//no vrom banks, just use VRAM
+		instant_chr_banks=(u8**)((u8*)end_of_cache-chr_table_size);
+		//rombanks, each takes up 4 bytes, 2 of them per 16k
+		instant_prg_banks=(u8**)((u8*)instant_chr_banks-prg_table_size);
+		//don't overlap
+		end_of_cache=(u8*)instant_prg_banks;
+	}
+	*/
+	
 	//do we have enough memory to store the ROM?
 	if (comptype != 0)
 	{
@@ -513,7 +853,7 @@ void init_cache(u8* nes_header, int do_reset)
 		}
 	}
 	
-	
+	/*
 	//setup buffers
 	if (do_reset==1)
 	{
@@ -565,14 +905,33 @@ void init_cache(u8* nes_header, int do_reset)
 			end_of_cache = p;
 		}
 	}
-	
-	if (vrompages==0)
-	{
-		assign_chr_pages(NES_VRAM,0,8);
-	}
+	*/
 	
 	//assign pages!
 	{
+		u8 *_rombase;
+		
+		if (comptype==0)
+		{
+			_rombase=nes_header+16;
+		}
+		else
+		{
+			rom_is_compressed=1;
+			_rombase=cachebase;
+		}
+		assign_pages(comptype, _rombase, page_size);
+	}
+	/*
+	if (vrompages==0)
+	{
+		assign_chr_pages(NES_VRAM,0,8);
+	}*/
+	
+	
+	//assign pages!
+	{
+		/*
 		u8 *_rombase, *_vrombase;
 		int prg_entries,chr_entries;
 		
@@ -637,8 +996,13 @@ void init_cache(u8* nes_header, int do_reset)
 				assign_chr_pages2(vrom_bank_1,104,24);
 			}
 		}
+		*/
 
 		if (comptype!=0 && !doNotDecompress)
+		{
+			cache_end_of_rom = decompress_rom(nes_header, cachebase, page_size, comptype);
+		}
+		/*
 		{
 			u8* compsrc=nes_header+20;
 			u8* compdest=cachebase;
@@ -765,6 +1129,7 @@ void init_cache(u8* nes_header, int do_reset)
 				return;
 			}
 		}
+		*/
 
 		#if USE_ACCELERATION
 
@@ -965,7 +1330,7 @@ void init_cache(u8* nes_header, int do_reset)
 	
 	//fix VS games
 	paletteinit();
-
+	
 	//make sure DIPSCNT buffers aren't zeroed
 	if (do_reset == 0)
 	{

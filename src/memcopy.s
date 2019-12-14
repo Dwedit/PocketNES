@@ -17,6 +17,9 @@
 	global_func simpleswap32
 	global_func memmove32
 	global_func bytecopy
+#if COMPY
+	global_func bytecopy16
+#endif
 
 memset32:
 	mov r2,r2,lsr#1
@@ -107,6 +110,21 @@ bytecopy:
 	subs r2,r2,#1
 	bgt bytecopy
 	bx lr
+#if COMPY
+bytecopy16:
+	stmfd sp!,{r3}
+	@r0=dest, r1=src, r2=byte count
+0:
+	ldrb r3,[r1],#1
+	ldrb r12,[r1],#1
+	orr r3,r3,r12,lsl#8
+	strh r3,[r0],#2
+	subs r2,r2,#2
+	bgt 0b
+	ldmfd sp!,{r3}
+	bx lr
+#endif
+
 
 memmove32:
 	@r0=dest, r1=src, r2=byte count

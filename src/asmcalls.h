@@ -332,6 +332,7 @@ extern u32 sram_W2[];
 #endif
 
 u8* bytecopy(void* dest, const void* src, int bytesToCopy);
+u8* bytecopy16(void* dest, const void* src, int bytesToCopy);
 u32* memcpy32(void* dest, const void* src, int bytesToCopy);
 u32* memmove32(void* dest, const void* src, int bytesToMove);
 u32* memset32(void* dest, u32 value, int bytesToSet);
