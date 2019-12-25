@@ -617,16 +617,16 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 
 static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comptype)
 {
-	u8* compsrc=nes_header+20;
-	u8* compdest=cachebase;
-	u8* mem_end=(u8*)0x02040000;
+	u8* compsrc = nes_header + 20;
+	u8* compdest = cachebase;
+	u8* mem_end = (u8*)0x02040000;
 	u8* cache_end_of_rom;
 
-	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
-	u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
-	u8 *const vrom_bank_1=VRAM+0x0E000; //8k size  (24k with vrom_bank_2 folllowing it)
-	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
-	u8 *const novrom_bank=VRAM+0x08000; //48k size
+	u8 *const VRAM = (u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+	u8 *const vrom_bank_0 = VRAM + 0x0A000; //8k size
+	u8 *const vrom_bank_1 = VRAM + 0x0E000; //8k size  (24k with vrom_bank_2 folllowing it)
+	u8 *const vrom_bank_2 = VRAM + 0x10000; //16k size
+	u8 *const novrom_bank = VRAM + 0x08000; //48k size
 
 	u32 filesize= *(u32*)(&nes_header[-16]);
 	filesize=((filesize-1)|3)+1;
@@ -643,13 +643,26 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 		u8* compcopy;
 		stop_dma_interrupts();
 		//needresume=true;
-
-		compcopy = mem_end - filesize;
-		//compcopy = end_of_cache - filesize;
-		memmove32(compcopy,compsrc,filesize);
-		compsrc=compcopy;
+		
+		if (comptype > 0)
+		{
+			compcopy = mem_end - filesize;
+			//compcopy = end_of_cache - filesize;
+			memmove32(compcopy,compsrc,filesize);
+			compsrc=compcopy;
+		}
 	}
-
+	if (!ROMMENU && comptype == 0 && compsrc<(u8*)0x08000000)
+	{
+		//memory copy to final location
+		compsrc = nes_header + 16;
+		memmove32(compdest, compsrc, filesize);
+		cache_end_of_rom=192*1024+cachebase;
+	}
+	else if (ROMMENU && comptype == 0 && compsrc>=(u8*)0x08000000)
+	{
+		compdest = nes_header + 16;
+	}
 	if (comptype==1)
 	{
 		//one chunk, 192k or smaller
@@ -684,7 +697,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 				firstPage = 0;
 				pagesToCopy = 2;
 			}
-			memcpy32(novrom_bank,_rombase + firstPage * 16384, pagesToCopy * 16384);
+			memcpy32(novrom_bank,compdest + firstPage * 16384, pagesToCopy * 16384);
 			//assign_prg_pages2(novrom_bank, firstpage * PRG_16, pages_to_copy * PRG_16);
 			
 			if (page_size < 32)
@@ -692,7 +705,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 				//copy the first 16k too
 				pagesToCopy = 1;
 				firstPage = 0;
-				memcpy32(vrom_bank_2, _rombase + firstPage * 16384, pagesToCopy * 16384);
+				memcpy32(vrom_bank_2, compdest + firstPage * 16384, pagesToCopy * 16384);
 				//assign_prg_pages2(vrom_bank_2, firstPage * PRG_16, pagesToCopy * PRG_16);
 			}
 		}
@@ -700,7 +713,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 		{
 			pagesToCopy = 1;
 			firstPage = rompages - pagesToCopy;
-			memcpy32(vrom_bank_2, _rombase + firstPage * 16384, pagesToCopy * 16384);
+			memcpy32(vrom_bank_2, compdest + firstPage * 16384, pagesToCopy * 16384);
 			//assign_prg_pages2(vrom_bank_2, firstpage*PRG_16,pages_to_copy*PRG_16);
 			
 			//If page size is 32k, nothing is in GBA VRAM,
@@ -708,7 +721,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			//so that back branches from C0xx to BFxx work.  Fixes Arkista's Ring
 			if (page_size == 32)
 			{
-				memcpy32(vrom_bank_2 - 256, _rombase + firstPage * 16384 - 256, 256);
+				memcpy32(vrom_bank_2 - 256, compdest + firstPage * 16384 - 256, 256);
 			}
 		}
 	}
@@ -1120,7 +1133,7 @@ void init_cache(u8* nes_header, int do_reset)
 		}
 		*/
 
-		if (comptype!=0 && !doNotDecompress)
+		if (!doNotDecompress)
 		{
 			cache_end_of_rom = decompress_rom(nes_header, cachebase, page_size, comptype);
 		}
