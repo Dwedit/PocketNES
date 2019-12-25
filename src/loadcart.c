@@ -616,7 +616,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 		//256k size!
 
 		//Do Last 128k
-		breakpoint();
+		//breakpoint();
 		depack(compsrc,compdest);
 
 		compdest+=128*1024;
@@ -643,7 +643,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			memcpy32(vrom_bank_2,compdest,16*1024);
 
 			compsrc+=prg_pos;
-			breakpoint();
+			//breakpoint();
 			depack(compsrc,compdest);
 
 			//now rearrange first 5 with last 8
@@ -676,7 +676,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			memcpy32(vrom_bank_0,compdest,8*1024);
 
 			compsrc+=prg_pos;
-			breakpoint();
+			//breakpoint();
 			depack(compsrc,compdest);
 
 			//now rearrange first 6 with last 8
@@ -1474,7 +1474,11 @@ APPEND_DATA const unsigned char MapperNumberOverlayList[] =
 extern unsigned char __load_start_iwram0[], __load_start_iwram1[], __load_start_iwram2[],
 					__load_start_iwram3[], __load_start_iwram4[], __load_start_iwram5[],
 					__load_start_iwram6[], __load_start_iwram7[], __load_start_iwram8[],
-					__load_start_iwram9[], __load_stop_iwram9[];
+					__load_start_iwram9[];
+extern unsigned char __load_stop_iwram0[], __load_stop_iwram1[], __load_stop_iwram2[],
+					__load_stop_iwram3[], __load_stop_iwram4[], __load_stop_iwram5[],
+					__load_stop_iwram6[], __load_stop_iwram7[], __load_stop_iwram8[],
+					__load_stop_iwram9[];
 
 extern unsigned char __iwram_overlay_start[];
 
@@ -1490,23 +1494,41 @@ APPEND_DATA const unsigned char *const MapperOverlaySource[] =
 	__load_start_iwram7,
 	__load_start_iwram8,
 	__load_start_iwram9,
+};
+
+APPEND_DATA const unsigned char *const MapperOverlayEnd[] =
+{
+	__load_stop_iwram0,
+	__load_stop_iwram1,
+	__load_stop_iwram2,
+	__load_stop_iwram3,
+	__load_stop_iwram4,
+	__load_stop_iwram5,
+	__load_stop_iwram6,
+	__load_stop_iwram7,
+	__load_stop_iwram8,
 	__load_stop_iwram9,
 };
 
+APPEND u32 GetMapperOverlayMaxSize()
+{
+	//find overlay source size (to avoid hardcoding to 1768)
+	u32 size = 0;
+	for (int i = 0; i < ARRSIZE(MapperOverlaySource) - 1; i++)
+	{
+		u32 sectionSize = (u32)MapperOverlayEnd[i] - (u32)MapperOverlaySource[i];
+		if (sectionSize > size) size = sectionSize;
+	}
+	return size;
+}
 
 APPEND void LoadMapperOverlay(int mapperNumber)
 {
 	const int DEFAULT_MAPPER_OVERLAY_NUMBER = 4;
 	//const int MAPPER_OVERLAY_SIZE = 1768;
 	
-	//find overlay source size (to avoid hardcoding to 1768)
-	u32 size = 0;
-	for (int i = 0; i < ARRSIZE(MapperOverlaySource) - 1; i++)
-	{
-		u32 sectionSize = (u32)MapperOverlaySource[i + 1] - (u32)MapperOverlaySource[i];
-		if (sectionSize > size) size = sectionSize;
-	}
-	
+	u32 size = GetMapperOverlayMaxSize();
+		
 	int overlayNumber = lookup_mapper_arr(mapperNumber, MapperNumberOverlayList);
 	if (overlayNumber == 8) overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
 	unsigned char *dest = __iwram_overlay_start;
