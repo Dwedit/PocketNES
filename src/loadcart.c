@@ -521,6 +521,54 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
 	u8 *const novrom_bank=VRAM+0x08000; //48k size
 
+	//TURBO
+	if (comptype == 0 || comptype == 1)
+	{
+		//copy to VRAM for speed
+		int pagesToCopy = 2;
+		int firstPage = rompages - 2;
+		if (rompages == 1)
+		{
+			pagesToCopy = 0;
+			firstPage = 0;
+		}
+		if (bankable_vrom == 0 || vrompages == 1)
+		{
+			if (page_size == 32)
+			{
+				firstPage = 0;
+				pagesToCopy = 2;
+			}
+			assign_prg_pages2(novrom_bank, firstPage * PRG_16, pagesToCopy * PRG_16);
+			
+			if (page_size < 32)
+			{
+				//copy the first 16k too
+				pagesToCopy = 1;
+				firstPage = 0;
+				//memcpy_if_okay(vrom_bank_2, _rombase + firstPage * 16384, pagesToCopy * 16384);
+				assign_prg_pages2(vrom_bank_2, firstPage * PRG_16, pagesToCopy * PRG_16);
+			}
+		}
+		else
+		{
+			pagesToCopy = 1;
+			firstPage = rompages - pagesToCopy;
+			//memcpy_if_okay(vrom_bank_2, _rombase + firstPage * 16384, pagesToCopy * 16384);
+			assign_prg_pages2(vrom_bank_2, firstPage*PRG_16,pagesToCopy*PRG_16);
+			
+			//If page size is 32k, nothing is in GBA VRAM,
+			//and NES VROM/VRAM is bankable, then copy 256 bytes before the page
+			//so that back branches from C0xx to BFxx work.  Fixes Arkista's Ring
+			//if (page_size == 32)
+			//{
+			//	memcpy_if_okay(vrom_bank_2 - 256, _rombase + firstPage * 16384 - 256, 256);
+			//}
+		}
+	}
+
+
+
 	if (comptype==2)
 	{
 		if (vrompages==0)
@@ -552,6 +600,17 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 			assign_chr_pages2(vrom_bank_0,96,8);
 			//assign page EF (24k)
 			assign_chr_pages2(vrom_bank_1,104,24);
+
+			const u8 *const a = _rombase + 7 * 16384 + 256;
+			breakpoint();
+			//0123456F89ABCD E 7	- bank 7 and F are now swapped
+			//reassign 89ABCD
+			assign_chr_pages2(a + 16384, 0, 6 * 16);
+			//assign F
+			assign_chr_pages2(a, 128 - 16, 16);
+			//assign 7
+			assign_prg_pages2(vrom_bank_2, 7 * PRG_16, 1 * PRG_16);
+
 		}
 	}	
 }
@@ -562,6 +621,12 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 	u8* compdest=cachebase;
 	u8* mem_end=(u8*)0x02040000;
 	u8* cache_end_of_rom;
+
+	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+	u8 *const vrom_bank_0=VRAM+0x0A000; //8k size
+	u8 *const vrom_bank_1=VRAM+0x0E000; //8k size  (24k with vrom_bank_2 folllowing it)
+	u8 *const vrom_bank_2=VRAM+0x10000; //16k size
+	u8 *const novrom_bank=VRAM+0x08000; //48k size
 
 	u32 filesize= *(u32*)(&nes_header[-16]);
 	filesize=((filesize-1)|3)+1;
@@ -601,6 +666,51 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 //				
 //				
 //				cache_end_of_rom=next_dest;
+	}
+	if (comptype == 0 || comptype == 1)
+	{
+		//copy to VRAM for speed
+		int pagesToCopy = 2;
+		int firstPage = rompages - 2;
+		if (rompages == 1)
+		{
+			pagesToCopy = 0;
+			firstPage = 0;
+		}
+		if (bankable_vrom == 0 || vrompages == 1)
+		{
+			if (page_size == 32)
+			{
+				firstPage = 0;
+				pagesToCopy = 2;
+			}
+			memcpy32(novrom_bank,_rombase + firstPage * 16384, pagesToCopy * 16384);
+			//assign_prg_pages2(novrom_bank, firstpage * PRG_16, pages_to_copy * PRG_16);
+			
+			if (page_size < 32)
+			{
+				//copy the first 16k too
+				pagesToCopy = 1;
+				firstPage = 0;
+				memcpy32(vrom_bank_2, _rombase + firstPage * 16384, pagesToCopy * 16384);
+				//assign_prg_pages2(vrom_bank_2, firstPage * PRG_16, pagesToCopy * PRG_16);
+			}
+		}
+		else
+		{
+			pagesToCopy = 1;
+			firstPage = rompages - pagesToCopy;
+			memcpy32(vrom_bank_2, _rombase + firstPage * 16384, pagesToCopy * 16384);
+			//assign_prg_pages2(vrom_bank_2, firstpage*PRG_16,pages_to_copy*PRG_16);
+			
+			//If page size is 32k, nothing is in GBA VRAM,
+			//and NES VROM/VRAM is bankable, then copy 256 bytes before the page
+			//so that back branches from C0xx to BFxx work.  Fixes Arkista's Ring
+			if (page_size == 32)
+			{
+				memcpy32(vrom_bank_2 - 256, _rombase + firstPage * 16384 - 256, 256);
+			}
+		}
 	}
 	if (comptype==2)
 	{
@@ -667,9 +777,10 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			//89ABCD E F			- copy banks E and F into VRAM
 			//then:
 			//89ABCD01234567 E F	- extract banks 01234567 into 6th slot
-			//finally:
 			//0123456789ABCD E F	- call "swapmem" to rearrange the banks
-
+			//finally, for speed:
+			//0123456F89ABCD E 7	- swap bank 7 and F
+			
 			compdest-=24*1024;
 			memcpy32(vrom_bank_1,compdest,24*1024);
 			compdest-=8*1024;
@@ -681,8 +792,18 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 
 			//now rearrange first 6 with last 8
 			swapmem( cachebase + 16384 * 6, cachebase, 8 * 16384);
+			breakpoint();
+			//place bank 7 into VRAM for speed  (swap with F)
+			simpleswap32(cachebase + 16384 * 7, vrom_bank_2, 16384);
+			
+			//advance bank 6 and above by 256 bytes
+			const int amountToAdvance = 256;
+			u8 *memoryToMove = cachebase + 16384 * 7;
+			u8 *moveDest = memoryToMove + amountToAdvance;
+			u8 *memoryToCopy = vrom_bank_2;
+			memmove32(moveDest, memoryToMove, 7 * 16384);
 
-			cache_end_of_rom = 14 * 16384 + cachebase;	//okay because 224K > 192K
+			cache_end_of_rom = 14 * 16384 + cachebase + 256;	//okay because 224K > 192K
 		}
 	}
 	if (compsrc<(u8*)0x08000000)
@@ -844,6 +965,7 @@ void init_cache(u8* nes_header, int do_reset)
 			extraSize = 49152;
 		}
 		extern u8 __eheap_start[];
+		extraSize += 256;
 		int maxSize = (end_of_cache - __eheap_start) + extraSize;
 		if (totalSize > maxSize)
 		{
