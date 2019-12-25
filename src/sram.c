@@ -11,7 +11,7 @@ readconfig
 writeconfig
 */
 
-extern char rom_is_compressed;
+//extern char rom_is_compressed;
 extern char ewram_owner_is_sram;
 
 #include "includes.h"

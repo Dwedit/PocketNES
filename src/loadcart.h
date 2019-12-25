@@ -14,7 +14,7 @@ extern "C" {
 #define SCREEN4	0x08
 #define VS		0x10
 
-extern char rom_is_compressed;
+//extern char rom_is_compressed;
 extern char ewram_owner_is_sram;
 extern char sprite_vram_in_use;
 extern char do_not_decompress;

@@ -9,6 +9,7 @@ extern u64 simpleswap32(u32 *A, u32 *B, u32 sizeInBytes);
 #include <string.h>
 */
 
+/*
 void* memcpy_if_okay(void *dest, const void *src, size_t size)
 {
 	if (do_not_decompress)
@@ -33,6 +34,7 @@ void simpleswap_if_okay(void *a_in, void* b_in, u32 size)
 	}
 }
 
+*/
 void assign_chr_pages(u8* base, int start, int end)  //in units of 1k
 {
 	int i;
@@ -59,6 +61,7 @@ void assign_chr_pages2(u8* base, int start, int numpages)
 	assign_chr_pages(base-start*1024,start,start+numpages);
 }
 
+#if USE_GAME_SPECIFIC_HACKS
 void swap_prg_pages(int page1, int page2, int numpages)
 {
 	int i;
@@ -73,7 +76,6 @@ void swap_prg_pages(int page1, int page2, int numpages)
 	}
 }
 
-#if USE_GAME_SPECIFIC_HACKS
 void make_contiguous(u8* cachebase, int page1, int page2) //16k page size
 {
 	//Copy bank 3 to EWRAM

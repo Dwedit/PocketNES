@@ -2,13 +2,13 @@
 
 extern u64 simpleswap32(u32 *A, u32 *B, u32 sizeInBytes);
 
-EWRAM_BSS char rom_is_compressed=0;	//The loaded rom is compressed
-EWRAM_BSS char ewram_owner_is_sram=0;	//After reading SRAM to the buffer, rom needs to be re-decompressed
-//char sprite_vram_in_use=0;	//this forbids using the cheat finder
-EWRAM_BSS char do_not_decompress=0;	//while loading state, do not decompress rom, just build tables
-EWRAM_BSS char do_not_reset_all=0;	//when loading an old savestate, do not call "reset all"
+//EWRAM_BSS char rom_is_compressed=0;	//The loaded rom is compressed
+EWRAM_BSS char ewram_owner_is_sram = 0;	//After reading SRAM to the buffer, rom needs to be re-decompressed
+//char sprite_vram_in_use=0;	//this forbids using the cheat finder (disabled because cheat finder no longer uses VRAM)
+EWRAM_BSS char do_not_decompress = 0;	//while loading state, do not decompress rom, just build tables
+EWRAM_BSS char do_not_reset_all = 0;	//when loading an old savestate, do not call "reset all"
 
-EWRAM_BSS u32 my_checksum=0;	//set by init_cache, called by loadcart
+EWRAM_BSS u32 my_checksum = 0;	//set by init_cache, called by loadcart
 
 #if MAPPER_OVERLAYS
 APPEND void LoadMapperOverlay(int mapperNumber);
@@ -135,14 +135,15 @@ static int lookup_mapper_arr(int mapper, const unsigned char *p)
 static int get_prg_bank_size(int mapper)
 {
 	const unsigned char numbers[] = {8, 32, 16};
-	int banksize = numbers[lookup_mapper_arr(mapper, prg_bank_size_table)];
+	int page_size = numbers[lookup_mapper_arr(mapper, prg_bank_size_table)];
 	if (rompages == 2 ||
 		(mapper == 1 && rompages > 16) ||
 		(mapper == 1 && vrompages == 1))
 	{
-		banksize = 32;
+		page_size = 32;
 	}
-	return banksize;
+	if (rompages == 1) page_size = 16;
+	return page_size;
 }
 
 
@@ -384,6 +385,8 @@ static void init_cache_clear_vram()
 
 static u8* allocate_end_variables(int do_reset)
 {
+	u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
+	u8 *const extra_nametables=VRAM+0x07000; //4-screen gets this
 	u8 *end_of_cache=end_of_exram;
 	
 	if (!fourscreen)
@@ -435,8 +438,6 @@ static u8* allocate_end_variables(int do_reset)
 		stop_dma_interrupts();
 		if (!fourscreen)
 		{
-			u8 *const VRAM=(u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
-			u8 *const extra_nametables=VRAM+0x07000; //4-screen gets this
 			//place scanline buffers into ram otherwise occupied by other 2 nametables
 			u8 * p= extra_nametables + 0x1000;
 			p -= 164*4;
@@ -544,7 +545,6 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 				//assign page 01
 				assign_prg_pages2(novrom_bank,0,2*PRG_16);
 			}
-
 		}
 		else
 		{
@@ -569,7 +569,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 	
 	u32 prg_pos=*(u32*)(&nes_header[8]) >> 8;
 	
-	rom_is_compressed=1;
+	//rom_is_compressed=1;
 	ewram_owner_is_sram=0;
 
 	//move to the end of EWRAM
@@ -680,9 +680,9 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			depack(compsrc,compdest);
 
 			//now rearrange first 6 with last 8
-			swapmem( cachebase+16384*6, cachebase, 8*16384);
+			swapmem( cachebase + 16384 * 6, cachebase, 8 * 16384);
 
-			cache_end_of_rom = 14*16384+cachebase;	//okay because 224K > 192K
+			cache_end_of_rom = 14 * 16384 + cachebase;	//okay because 224K > 192K
 		}
 	}
 	if (compsrc<(u8*)0x08000000)
@@ -701,7 +701,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 void init_cache(u8* nes_header, int do_reset)
 {
 	//do_reset:
-	// 0 = called from redecompress and we don't want to reset any memory
+	// 0 = called from redecompress and we don't want to reset any memory, but want to perform decompression/copies
 	// 1 = called from Loadcart and we want to reset everything
 	
 	u32 comp_sig;
@@ -917,7 +917,7 @@ void init_cache(u8* nes_header, int do_reset)
 		}
 		else
 		{
-			rom_is_compressed=1;
+			//rom_is_compressed=1;
 			_rombase=cachebase;
 		}
 		assign_pages(comptype, _rombase, page_size);
@@ -941,7 +941,7 @@ void init_cache(u8* nes_header, int do_reset)
 		}
 		else
 		{
-			rom_is_compressed=1;
+			//rom_is_compressed=1;
 //			ewram_owner_is_sram=1;
 			_rombase=cachebase;
 		}
@@ -1012,7 +1012,7 @@ void init_cache(u8* nes_header, int do_reset)
 			filesize=((filesize-1)|3)+1;
 			filesize-=16;
 
-			rom_is_compressed=1;
+			//rom_is_compressed=1;
 			ewram_owner_is_sram=0;
 
 			//move to the end of EWRAM
@@ -1473,7 +1473,8 @@ APPEND_DATA const unsigned char MapperNumberOverlayList[] =
 
 extern unsigned char __load_start_iwram0[], __load_start_iwram1[], __load_start_iwram2[],
 					__load_start_iwram3[], __load_start_iwram4[], __load_start_iwram5[],
-					__load_start_iwram6[], __load_start_iwram7[];
+					__load_start_iwram6[], __load_start_iwram7[], __load_start_iwram8[],
+					__load_start_iwram9[], __load_stop_iwram9[];
 
 extern unsigned char __iwram_overlay_start[];
 
@@ -1487,18 +1488,29 @@ APPEND_DATA const unsigned char *const MapperOverlaySource[] =
 	__load_start_iwram5,
 	__load_start_iwram6,
 	__load_start_iwram7,
+	__load_start_iwram8,
+	__load_start_iwram9,
+	__load_stop_iwram9,
 };
 
 
 APPEND void LoadMapperOverlay(int mapperNumber)
 {
 	const int DEFAULT_MAPPER_OVERLAY_NUMBER = 4;
-	const int MAPPER_OVERLAY_SIZE = 1768;
+	//const int MAPPER_OVERLAY_SIZE = 1768;
+	
+	//find overlay source size (to avoid hardcoding to 1768)
+	u32 size = 0;
+	for (int i = 0; i < ARRSIZE(MapperOverlaySource) - 1; i++)
+	{
+		u32 sectionSize = (u32)MapperOverlaySource[i + 1] - (u32)MapperOverlaySource[i];
+		if (sectionSize > size) size = sectionSize;
+	}
+	
 	int overlayNumber = lookup_mapper_arr(mapperNumber, MapperNumberOverlayList);
 	if (overlayNumber == 8) overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
 	unsigned char *dest = __iwram_overlay_start;
 	const unsigned char *src = MapperOverlaySource[overlayNumber];
-	int size = MAPPER_OVERLAY_SIZE;
 	memcpy32(dest, src, size);
 }
 
