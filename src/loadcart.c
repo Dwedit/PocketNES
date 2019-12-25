@@ -375,7 +375,7 @@ static void init_cache_clear_vram()
 	memset32((void*)0x06000000,0,0x2000);	//tiles 1
 	memset32((void*)0x06004000,0,0x2000);	//tiles 2
 	//memset32((void*)0x06006000,0,0x1000);	//tilemap (not 4-screen)  //disabled because it's now where scanline effect buffers go
-	if (!doNotDecompress)
+	if (!do_not_decompress)
 	{
 		memset32((void*)0x06008000,0,0x8000);	//rest of VRAM
 		memset32((void*)0x06010000,0,0x8000);	//sprite VRAM and extra bank vram
