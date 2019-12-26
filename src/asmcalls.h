@@ -203,6 +203,10 @@ void depack(u8 *source, u8 *destination);
 //boot.s
 extern const u8 font[];				//from boot.s
 extern const u8 fontpal[];				//from boot.s
+#if (MULTIBOOT || GOMULTIBOOT) && !COMPY
+extern const u8 mb_binary[];
+extern const u8 mb_binary_end[];
+#endif
 
 //cart.s
 void reset_buffers(void);

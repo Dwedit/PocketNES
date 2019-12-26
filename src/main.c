@@ -1,5 +1,8 @@
 #include "includes.h"
 
+#define POGO_FILEHEAD (*(volatile u8**)0x0203fbfc)
+#define POGO_FILETAIL (*(volatile u8**)0x0203fbf8)
+
 /*
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +25,7 @@ EWRAM_BSS u32 max_multiboot_size;
 EWRAM_BSS u32 oldinput;
 
 EWRAM_BSS char pogoshell_romname[32];	//keep track of rom name (for state saving, etc)
+EWRAM_BSS u32 pogoshell_filesize;
 #if RTCSUPPORT
 EWRAM_BSS char rtc=0;
 #endif
@@ -125,8 +129,18 @@ APPEND void C_entry()
 	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
 	//Warning: VRAM code must be loaded at some point
 	
-	temp=(u32)(*(u8**)0x0203FBFC);
+	#if !COMPY
+	temp=(u32)POGO_FILEHEAD;
 	pogoshell=((temp & 0xFE000000) == 0x08000000)?1:0;
+	if (pogoshell)
+	{
+		u32 tail = (u32)POGO_FILETAIL;
+		pogoshell_filesize = tail - temp;
+	}
+	#else
+	pogoshell = 0;
+	pogoshell_filesize = 0;
+	#endif
 	gbaversion=CheckGBAVersion();
 	
 	//load font+palette
@@ -154,6 +168,7 @@ APPEND void C_entry()
 	BUFFER3 = BUFFER2+0x20000;
 #endif
 
+#if !COMPY
 	if(pogoshell)
 	{
 		//find the filename
@@ -180,7 +195,7 @@ APPEND void C_entry()
 			emuflags &= ~PALTIMING;
 		
 		//set ROM address
-		textstart=(*(u8**)0x0203FBFC)-sizeof(romheader);
+		textstart=POGO_FILEHEAD-sizeof(romheader);
 		
 		//So it will try to detect roms when loading state
 		roms=1;
@@ -189,6 +204,7 @@ APPEND void C_entry()
 		memcpy(mb_header.name,pogoshell_romname,32);
 #endif
 	}
+#endif
 
 	if (!pogoshell)
 	{

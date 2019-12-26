@@ -958,9 +958,67 @@ char *number(unsigned short n)
 //extern int romnum;
 
 #if GOMULTIBOOT
-//THIS CODE HASN'T BEEN COMPILED IN FOR A WHILE AND NEEDS FIXING!
 void go_multiboot()
 {
+#if VERSION_IN_ROM
+	u8* rom_addr;
+	u32 romsize;
+	u8 *emu_src=(u8*)mb_binary;
+	u8 *emu_dest=(u8*)0x02000000;
+	u32 emu_size=(u32)mb_binary_end - (u32)mb_binary;
+	u32 max_mb_size=0x40000 - emu_size;
+	int i;
+	int key;
+	
+	rom_addr=(u8*)findrom(selectedrom);
+	romsize = *(u32*)(&rom_addr[32]);
+	romsize += 48;
+	if (pogoshell) romsize = pogoshell_filesize;
+	romsize =((romsize-1)|3)+1;
+	
+	if (romsize>max_mb_size)
+	{
+		cls(1);
+		drawtext(8, "Game is too big to multiboot",0);
+		for(i=0;i<90;i++)			//wait a while
+		{
+			waitframe();
+		}
+		return;
+	}
+	else
+	{
+		cls(1);
+		drawtext(8, "This will reset the emulator!",0);
+		drawtext(9, "       Are you sure?",0);
+		drawtext(10,"        A=YES, B=NO",0);
+		oldkey=~REG_P1;			//reset key input
+		do {
+			key=getmenuinput(10);
+			if(key&(B_BTN + R_BTN + L_BTN ))
+				return;
+		} while(!(key&(A_BTN)));
+		oldkey=~REG_P1;			//reset key input
+	}
+	REG_IME=0;
+	REG_DM0CNT_H=0;
+	REG_DM1CNT_H=0;
+	REG_DM2CNT_H=0;
+	REG_DM3CNT_H=0;
+	memset32((void*)0x06000000, 0, 0x18000);
+	memcpy32(emu_dest,emu_src,emu_size);
+	memcpy32(emu_dest+emu_size,rom_addr,romsize);
+	u8 *src = emu_dest+emu_size+romsize;
+	u8 *end = (u8*)0x02040000;
+	memset32(src, 0, end - src);
+	__asm
+	(
+		"ldr r0,=0x02000000\n"
+		"bx r0\n"
+		".ltorg"
+	);
+#else
+//THIS CODE HASN'T BEEN COMPILED IN FOR A WHILE AND NEEDS FIXING!
 	u8 *src, *dest;
 	int size;
 	int key;
@@ -992,6 +1050,7 @@ void go_multiboot()
 	loadcart(selectedrom,emuflags&0x300,0);
 	mainmenuitems=MENUXITEMS[1];
 	roms=1;
+#endif
 }
 #endif
 

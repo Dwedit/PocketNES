@@ -14,6 +14,7 @@ extern u8 *ewram_start;
 extern u8 *end_of_exram;
 extern int roms;//total number of roms
 extern char pogoshell_romname[32];	//keep track of rom name (for state saving, etc)
+extern u32 pogoshell_filesize;
 extern char pogoshell;
 extern char rtc;
 extern char gameboyplayer;

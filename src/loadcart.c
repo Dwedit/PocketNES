@@ -627,9 +627,13 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 	u8 *const vrom_bank_2 = VRAM + 0x10000; //16k size
 	u8 *const novrom_bank = VRAM + 0x08000; //48k size
 
+	//FIXME for pogoshell
 	u32 filesize= *(u32*)(&nes_header[-16]);
 	filesize=((filesize-1)|3)+1;
 	filesize-=16;
+	
+	if (pogoshell) filesize = pogoshell_filesize;
+	
 	
 	u32 prg_pos=*(u32*)(&nes_header[8]) >> 8;
 	
