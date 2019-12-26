@@ -208,14 +208,13 @@ void loadcart(int rom_number, int emu_flags, int loading_state)
 	}
 
 	
-	//blocked elsewhere, Reset became Soft Reset instead
-	//#if !ROMMENU
-	//if (_instant_prg_banks != NULL)
-	//{
-	//	loadcart_asm();
-	//	return;
-	//}
-	//#endif
+	#if COMPY
+	if (_instant_prg_banks != NULL)
+	{
+		loadcart_asm();
+		return;
+	}
+	#endif
 	
 //	int i;
 	
@@ -603,7 +602,6 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 			assign_chr_pages2(vrom_bank_1,104,24);
 
 			const u8 *const a = _rombase + 7 * 16384 + 256;
-			breakpoint();
 			//0123456F89ABCD E 7	- bank 7 and F are now swapped
 			//reassign 89ABCD
 			assign_chr_pages2(a + 16384, 0, 6 * 16);
@@ -740,7 +738,6 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 		//256k size!
 
 		//Do Last 128k
-		//breakpoint();
 		depack(compsrc,compdest);
 
 		compdest+=128*1024;
@@ -767,7 +764,6 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			memcpy32(vrom_bank_2,compdest,16*1024);
 
 			compsrc+=prg_pos;
-			//breakpoint();
 			depack(compsrc,compdest);
 
 			//now rearrange first 5 with last 8
@@ -801,12 +797,10 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			memcpy32(vrom_bank_0,compdest,8*1024);
 
 			compsrc+=prg_pos;
-			//breakpoint();
 			depack(compsrc,compdest);
 
 			//now rearrange first 6 with last 8
 			swapmem( cachebase + 16384 * 6, cachebase, 8 * 16384);
-			breakpoint();
 			//place bank 7 into VRAM for speed  (swap with F)
 			simpleswap32(cachebase + 16384 * 7, vrom_bank_2, 16384);
 			
@@ -1187,7 +1181,6 @@ void init_cache(u8* nes_header, int do_reset)
 				//256k size!
 
 				//Do Last 128k
-				breakpoint();
 				depack(compsrc,compdest);
 
 				compdest+=128*1024;
@@ -1214,7 +1207,6 @@ void init_cache(u8* nes_header, int do_reset)
 					memcpy32(vrom_bank_2,compdest,16*1024);
 
 					compsrc+=prg_pos;
-					breakpoint();
 					depack(compsrc,compdest);
 
 					//now rearrange first 5 with last 8
@@ -1247,7 +1239,6 @@ void init_cache(u8* nes_header, int do_reset)
 					memcpy32(vrom_bank_0,compdest,8*1024);
 
 					compsrc+=prg_pos;
-					breakpoint();
 					depack(compsrc,compdest);
 
 					//now rearrange first 6 with last 8
