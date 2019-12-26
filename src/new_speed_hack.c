@@ -441,6 +441,10 @@ bool game_specific_hack(const u8 *initpc, const u8 *lastbank, int hacknum)
 	int jumpsize;
 	const u8 *hackbase;
 	
+	//bounds check
+	//u32 limit = 0x06018000;
+	//if (initpc < limit && initpc + 22 >= limit) return false;
+	
 	jump=(const u8*)memchr_(initpc,0x4C,22);
 	if (!jump) return false;
 	jumppc=jump-lastbank;
