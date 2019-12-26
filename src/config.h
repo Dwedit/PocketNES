@@ -8,7 +8,7 @@
 #define DEBUG 0				//Set to 1 to have code called at the end of each instruction (such as logging)
 
 //#define VERSION_NUMBER "X alpha 3"
-#define VERSION_NUMBER "2019-12-11"
+#define VERSION_NUMBER "2019-12-25"
 //#define VERSION_NUMBER "DO NOT RELEASE"
 
 //default options

@@ -208,13 +208,14 @@ void loadcart(int rom_number, int emu_flags, int loading_state)
 	}
 
 	
-	#if COMPY
-	if (_instant_prg_banks != NULL)
-	{
-		loadcart_asm();
-		return;
-	}
-	#endif
+	//blocked elsewhere, Reset became Soft Reset instead
+	//#if !ROMMENU
+	//if (_instant_prg_banks != NULL)
+	//{
+	//	loadcart_asm();
+	//	return;
+	//}
+	//#endif
 	
 //	int i;
 	
@@ -529,7 +530,7 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 		int firstPage = rompages - 2;
 		if (rompages == 1)
 		{
-			pagesToCopy = 0;
+			pagesToCopy = 1;
 			firstPage = 0;
 		}
 		if (bankable_vrom == 0 || vrompages == 1)
@@ -886,17 +887,17 @@ void init_cache(u8* nes_header, int do_reset)
 	if (comp_sig==0x33335041) comptype=1;
 	if (comptype==1 && prg_pos!=0) comptype=2;
 	
-	if (nes_header<(u8*)0x08000000 && comptype != 0)
-	{
-		//Do not try to decompress twice if this was run from Multiboot
-		static int hasrun=0;
-		if (hasrun)
-		{
-			//return;
-			doNotDecompress = 1;
-		}
-		hasrun=1;
-	}
+	//if (nes_header<(u8*)0x08000000 && comptype != 0)
+	//{
+	//	//Do not try to decompress twice if this was run from Multiboot
+	//	static int hasrun=0;
+	//	if (hasrun)
+	//	{
+	//		//return;
+	//		doNotDecompress = 1;
+	//	}
+	//	hasrun=1;
+	//}
 
 	if (do_reset!=0)
 	{
@@ -1266,6 +1267,7 @@ void init_cache(u8* nes_header, int do_reset)
 		}
 		*/
 
+		/*
 		#if USE_ACCELERATION
 
 		//Increase performance by storing the most used ROM page in VRAM!
@@ -1378,6 +1380,7 @@ void init_cache(u8* nes_header, int do_reset)
 			}
 		}
 		#endif
+		*/
 
 	}
 	
