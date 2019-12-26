@@ -589,6 +589,7 @@ const u8 * memchr_ ( const u8 * ptr, int value, int size)
 	{
 		if (*ptr == value) return ptr;
 		ptr++;
+		size--;
 	}
 	return NULL;
 }
