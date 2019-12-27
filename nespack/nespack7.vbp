@@ -1,0 +1,35 @@
+Type=Exe
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\WINDOWS\system32\STDOLE2.TLB#OLE Automation
+Form=nespack7.frm
+IconForm="frm"
+Startup="frm"
+HelpFile=""
+Title="nespack7"
+ExeName32="nespack7.exe"
+Command32=""
+Name="nespack7"
+HelpContextID="0"
+CompatibleMode="0"
+MajorVer=1
+MinorVer=7
+RevisionVer=1
+AutoIncrementVer=1
+ServerSupportFiles=0
+CompilationType=0
+OptimizationType=1
+FavorPentiumPro(tm)=0
+CodeViewDebugInfo=0
+NoAliasing=-1
+BoundsCheck=-1
+OverflowCheck=-1
+FlPointCheck=-1
+FDIVCheck=-1
+UnroundedFP=-1
+StartMode=0
+Unattended=0
+Retained=0
+ThreadPerObject=0
+MaxNumberOfThreads=1
+
+[MS Transaction Server]
+AutoRefresh=1
