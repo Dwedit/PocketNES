@@ -1013,8 +1013,23 @@ void go_multiboot()
 	memset32(src, 0, end - src);
 	__asm
 	(
-		"ldr r0,=0x02000000\n"
-		"bx r0\n"
+		"mov r0,#0xF6" "\n"	//Reset all except for VRAM and EWRAM
+		"swi 0x01" "\n"		//RegisterRamReset
+		"mov r0,#0x01" "\n"	//Reboot at EWRAM
+		"ldr r1,=0x03007FFA" "\n"	//Return type flag
+		"strb r0,[r1]" "\n"			//Set value
+		"swi 0x00" "\n"		//Soft Reset
+		
+		//reset IWRAM to zeroes
+		//"ldr r0,=0x03000000" "\n"
+		//"ldr r1,=0x8000" "\n"
+		//"mov r2,#0" "\n"
+		//"0:" "\n"
+		//"str r2,[r0],#4" "\n"
+		//"sub r1,#4" "\n"
+		//"bne 0b" "\n"
+		//"ldr r0,=0x02000000\n"
+		//"bx r0\n"
 		".ltorg"
 	);
 #else

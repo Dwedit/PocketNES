@@ -822,7 +822,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 	{
 		//cleanup
 		reset_buffers();
-		cls(4);
+		cls(0x0F);
 		assign_pages(comptype, cachebase, page_size);
 		//init_cache(nes_header, 0);
 		//return;
