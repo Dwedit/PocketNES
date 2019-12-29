@@ -42,7 +42,7 @@
 //emulator memory options
 #define USE_GAME_SPECIFIC_HACKS 1	//Fixes Magic of Scheherazade (rearranges the banks in memory)
 #define USE_ACCELERATION 1	//Copies first 128K of ROM into EWRAM, not sure if this helps performance or not, but it does force 256 byte alignment.
-#define MULTIBOOT 0			//Allows the Link Transfer feature
+#define MULTIBOOT 1			//Allows the Link Transfer feature
 #define GOMULTIBOOT 1		//Allows use of the "Go Multiboot" feature (for multiboot builds)
 
 //Other options

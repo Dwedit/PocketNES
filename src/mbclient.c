@@ -105,6 +105,7 @@ int swi25(void *p) {
 	#else
 	register void * p2 __asm("r0");
 	p2 = p;
+	breakpoint();		//NO$GBA crashes without this due to a bug
 	__asm volatile (
 		"mov r1,#1"	"\n\t"
 		"swi 0x25"	"\n\t"
@@ -112,16 +113,33 @@ int swi25(void *p) {
 	#endif
 }
 
-extern u8 __text_start[], __iwram_start[], __data_start__[], __vram1_start[], __iwram_lma[], __iwram_end__[], __data_end__[], __vram1_end__[];
+//extern u8 __text_start[], __iwram_start[], __data_start__[], __vram1_start[], __iwram_lma[], __iwram_end__[], __data_end__[], __vram1_end__[];
 
 
-const void *const sectionStarts[] = {__text_start, __iwram_start, __data_start__, __vram1_start};
-const void *const sectionEnds[] = {__iwram_lma, __iwram_end__, __data_end__, __vram1_end__};
+//const void *const sectionStarts[] = {__text_start, __iwram_start, __data_start__, __vram1_start};
+//const void *const sectionEnds[] = {__iwram_lma, __iwram_end__, __data_end__, __vram1_end__};
 
 //returns error code:  2=bad send, 3=too big
 #define TIMEOUT 40
 int SendMBImageToClient()
 {
+	u8* rom_addr;
+	u32 romsize;
+	u8 *emu_start=(u8*)mb_binary;
+	u32 emu_size=(u32)mb_binary_end - (u32)mb_binary;
+	u32 max_mb_size=0x40000 - emu_size;
+	
+	rom_addr=(u8*)findrom(selectedrom);
+	romsize = *(u32*)(&rom_addr[32]);
+	romsize += 48;
+	if (pogoshell) romsize = pogoshell_filesize;
+	romsize =((romsize-1)|3)+1;
+	
+	if (romsize>max_mb_size)
+	{
+		return 3;
+	}
+	
 	MBStruct mp;
 	u8 palette;
 	int i,j,k;
@@ -129,8 +147,6 @@ int SendMBImageToClient()
 	u16 *p;
 	u16 slaves;
 	u16 ie;
-	u32 romsize;
-	//u32 emusize1,emusize2,romsize;
 
 	p=(u16 *)&mp;
 	for(i=0;i<38;i++)
@@ -143,23 +159,12 @@ int SendMBImageToClient()
 	file position = __data_lma,		origin = __data_start,	length = (__data_end - __data_start)
 	file position = __vram1_lma,	origin = __vram1_start,	length = (__vram1_end - __vram1_start)
 	*/
-	const int sectionCount = ARRSIZE(sectionEnds);
-	
-	int emuSize = 0;
-	for (i=0;i<sectionCount;i++)
-	{
-		emuSize += sectionEnds[i] - sectionStarts[i];
-	}
-	
 	
 
 
 //	emusize=((u32)(&Image$$RO$$Limit)&0x3ffff)+((u32)(&Image$$RW$$Limit)&0x7fff);
 //	emusize1=((u32)(&Image$$RO$$Limit)&0x3ffff);
 //	emusize2=((u32)(&Image$$ZI$$Base)&0x7fff);
-	if(pogoshell) romsize=48+16+(*(u8*)(findrom(romnum)+48+4))*16*1024+(*(u8*)(findrom(romnum)+48+5))*8*1024;  //need to read this from ROM
-	else romsize=sizeof(romheader)+*(u32*)(findrom(romnum)+32);
-	if(emuSize + romsize > 256*1024) return 3;
 
 	i=50;
 	REG_RCNT=0;			//multi-comms
@@ -221,7 +226,7 @@ int SendMBImageToClient()
 
 	REG_RCNT=0;			//multi-comms
 	i=100;
-	j=(emuSize + romsize)>>2;
+	j=(emu_size + romsize)>>2;
 	do {				//send size to client, wait for response
 		DelayCycles(1000000);
 		k=xfer(j);
@@ -232,17 +237,13 @@ int SendMBImageToClient()
 		goto transferEnd;
 	}
 
-	//send the four sections of the emulator
-	for (int sectionNumber = 0; sectionNumber < sectionCount; sectionNumber++)
-	{
-		int remainingSize = sectionEnds[sectionNumber] - sectionStarts[sectionNumber];
-		p = (u16*)(sectionStarts[sectionNumber]);
-		do
-		{
-			j=xfer(*(p++));
-			remainingSize-=2;
-		} while (remainingSize != 0 && j >= 0);
-	}
+	//Send the emulator
+	p = (u16*)emu_start;
+	int size = emu_size;
+	do {
+		j = xfer(*(p++));
+		size -= 2;
+	} while (size != 0 && j >= 0);
 	
 	/*
 	p=(u16*)((u32)0x2000000);	//(from ewram.)
@@ -267,14 +268,15 @@ int SendMBImageToClient()
 		for(i=0;i<sizeof(romheader);i+=2)
 			xfer(*(p++));
 		romsize-=sizeof(romheader);
-
-		p=(u16*)findrom(romnum)+sizeof(romheader)/2;
 	}
-	else p=(u16*)findrom(romnum);
-	do {				//send ROM
+	size = romsize;
+	p = (u16*)rom_addr;
+	
+	//Send the ROM
+	do {
 		j=xfer(*(p++));
-		romsize-=2;
-	} while(romsize && j>=0);
+		size -= 2;
+	} while(size && j >= 0);
 	i=0;
 transferEnd:
 	REG_IE=ie;

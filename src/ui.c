@@ -74,10 +74,11 @@ const fptr multifnlist[]=
 	#if OLDSPEEDHACKS
 	ui4,
 	#endif
+	sleep_,
 	#if MULTIBOOT
 	multiboot,
 	#endif
-	sleep_,restart,exit_
+	restart,exit_
 };
 
 const fptr fnlist1[]=
@@ -89,13 +90,13 @@ const fptr fnlist1[]=
 	#if OLDSPEEDHACKS
 	ui4,
 	#endif
-	#if MULTIBOOT
-	multiboot,
-	#endif
 	#if SAVE
 	savestatemenu,loadstatemenu,managesram,
 	#endif
 	sleep_,
+	#if MULTIBOOT
+	multiboot,
+	#endif
 	#if GOMULTIBOOT
 	go_multiboot,
 	#endif
@@ -227,11 +228,11 @@ void drawui1()
 	#if OLDSPEEDHACKS
 	print_1_1("Speed Hacks->");
 	#endif
-	#if MULTIBOOT
-	print_1_1("Link Transfer");
-	#endif
 	if(mainmenuitems==ARRSIZE(multifnlist)) {
 		print_1_1("Sleep");
+		#if MULTIBOOT
+		print_1_1("Link Transfer");
+		#endif
 		print_1_1("Restart");
 		print_1_1("Exit");
 	} else {
@@ -241,6 +242,9 @@ void drawui1()
 		print_1_1("Manage SRAM->");
 		#endif
 		print_1_1("Sleep");
+		#if MULTIBOOT
+		print_1_1("Link Transfer");
+		#endif
 		#if GOMULTIBOOT
 		print_1_1("Go Multiboot");
 		#endif

@@ -1462,7 +1462,10 @@ void init_cache(u8* nes_header, int do_reset)
 #endif
 	
 	//fix VS games
-	paletteinit();
+	if (do_reset)
+	{
+		paletteinit();
+	}
 	
 	//make sure DIPSCNT buffers aren't zeroed
 	if (do_reset == 0)
