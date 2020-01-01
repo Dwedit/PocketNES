@@ -65,7 +65,7 @@ APPEND int main()
 
 #if COMPY
 		//simulate full multiboot for debugging  (DELETE LATER)
-		memcpy32((u8*)end_addr, textstart, 0x0203FBFC - end_addr);
+		memcpy32((u8*)end_addr, textstart, 0x02040000 - end_addr);
 		textstart = (u8*)end_addr;
 		copiedfromrom = 0;
 #endif	
@@ -147,7 +147,9 @@ APPEND void C_entry()
 	loadfont();
 	loadfontpal();
 	ui_x=0x100;
+#if ROMMENU
 	move_ui();
+#endif
 //	REG_BG2HOFS=0x0100;		//Screen left
 	REG_BG2CNT=0x0400;	//16color 512x256 CHRbase0 SCRbase6 Priority0
 	
@@ -206,6 +208,7 @@ APPEND void C_entry()
 	}
 #endif
 
+#if ROMMENU
 	if (!pogoshell)
 	{
 		bool wantToSplash = false;
@@ -256,6 +259,9 @@ APPEND void C_entry()
 		if(!i)i=1;					//Stop PocketNES from crashing if there are no ROMs
 		roms=i;
 	}
+#else
+	roms = 1;
+#endif
 //	REG_WININ=0xFFFF;
 //	REG_WINOUT=0xFFFB;
 //	REG_WIN0H=0xFF;
