@@ -816,16 +816,7 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 	if (compsrc<(u8*)0x08000000)
 	{
 		u8* compcopy;
-		DEFERRED_CALL(stop_dma_interrupts,0,0,0);
-		
-#if COMPY
-	{
-		//Temporary hack: Restore saved EWRAM
-		//DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x8000, (u8*)0x06000000, 0x2000);
-		//DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x6000, (u8*)0x06004000, 0x2000);
-		//DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x4000, (u8*)0x06014000, 0x4000);
-	}
-#endif
+		stop_dma_interrupts();
 		
 		//needresume=true;
 		
@@ -1072,9 +1063,9 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 			{
 				//Swap bank CD with END32K
 				//breakpoint();
-				DEFERRED_CALL(simpleswap32,VRAM + 0x0000, compdest + 4 * 16384, 0x2000);
-				DEFERRED_CALL(simpleswap32,VRAM + 0x4000, compdest + 4 * 16384 + 0x2000, 0x2000);
-				DEFERRED_CALL(simpleswap32,VRAM + 0x14000, compsrc + 4 * 16384 + 0x4000, 0x4000);
+				DEFERRED_CALL(simpleswap32,VRAM + 0x0000, cachebase + 4 * 16384, 0x2000);
+				DEFERRED_CALL(simpleswap32,VRAM + 0x4000, cachebase + 4 * 16384 + 0x2000, 0x2000);
+				DEFERRED_CALL(simpleswap32,VRAM + 0x14000, cachebase + 4 * 16384 + 0x4000, 0x4000);
 				//breakpoint();
 				
 				int compsrc2_bytepos = (u32)compsrc2 & 3;
@@ -1083,9 +1074,9 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 				u8 *compsrc2_new_aligned = compsrc2_aligned - 0x8000;
 				u8 *compsrc2_new = compsrc2_new_aligned + compsrc2_bytepos;
 				
-				//FIXME
 				//rearrange END32K to come after the compressed rom
 				//breakpoint();
+				DEFERRED_CALL(memmove32,compsrc2_new_aligned, cachebase + 4 * 16384, 0x8000);
 				DEFERRED_CALL(swapmem,compsrc2_aligned, compsrc2_new_aligned, mem_end - compsrc2_aligned);
 				//breakpoint();
 				
