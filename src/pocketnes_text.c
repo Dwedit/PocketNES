@@ -99,12 +99,12 @@ void move_ui()
 	REG_BG2VOFS=ui_y;
 }
 
-void loadfont()
+APPEND void loadfont()
 {
 	//memcpy32(FONT_MEM,(const u32*)&font, font_size);
 	LZ77UnCompVram((const u32*)&font,FONT_MEM);
 }
-void loadfontpal()
+APPEND void loadfontpal()
 {
 	memcpy32(FONT_PAL,&fontpal,64);
 }
