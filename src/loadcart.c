@@ -821,9 +821,9 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 #if COMPY
 	{
 		//Temporary hack: Restore saved EWRAM
-		DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x8000, (u8*)0x06000000, 0x2000);
-		DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x6000, (u8*)0x06004000, 0x2000);
-		DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x4000, (u8*)0x06014000, 0x4000);
+		//DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x8000, (u8*)0x06000000, 0x2000);
+		//DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x6000, (u8*)0x06004000, 0x2000);
+		//DEFERRED_CALL(memcpy32,(u8*)0x2040000 - 0x4000, (u8*)0x06014000, 0x4000);
 	}
 #endif
 		

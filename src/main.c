@@ -272,15 +272,15 @@ APPEND void C_entry()
 	int vram1_size = ((((u8*)__vram1_end - (u8*)__vram1_start) - 1) | 3) + 1;
 	memcpy32((u32*)__vram1_start,(const u32*)__vram1_lma,vram1_size);
 	
-	#if COMPY
-	{
-		//temporary hack: Save EWRAM because it will be clobbered later
-		memcpy32((u8*)0x06000000, (u8*)0x2040000 - 0x8000, 0x2000);
-		memcpy32((u8*)0x06004000, (u8*)0x2040000 - 0x6000, 0x2000);
-		memcpy32((u8*)0x06014000, (u8*)0x2040000 - 0x4000, 0x4000);
-	}
-	
-	#endif
+	//#if COMPY
+	//{
+	//	//temporary hack: Save EWRAM because it will be clobbered later
+	//	memcpy32((u8*)0x06000000, (u8*)0x2040000 - 0x8000, 0x2000);
+	//	memcpy32((u8*)0x06004000, (u8*)0x2040000 - 0x6000, 0x2000);
+	//	memcpy32((u8*)0x06014000, (u8*)0x2040000 - 0x4000, 0x4000);
+	//}
+	//
+	//#endif
 	
 	//#if COMPY
 	////If multiboot, move appended ROM to the end of memory
