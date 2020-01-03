@@ -216,7 +216,10 @@ void loadcart(int rom_number, int emu_flags, int loading_state)
 	#endif
 	
 	loadcart2(rom_number, emu_flags, loading_state);
+	#if COMPY
 	run_deferred_calls();
+	#endif
+	
 	return;
 }
 
@@ -341,13 +344,18 @@ APPEND void loadcart2(int rom_number, int emu_flags, int loading_state)
 	}
 	#endif
 	
+	#if COMPY
 	set_deferred_call_ptrs(NES_RAM);
-	
-		
 	init_cache_deferred(nesheader);
 	DEFERRED_CALL(init_sprite_cache,0,0,0);
 	DEFERRED_CALL(loadcart_asm,0,0,0);
 	DEFERRED_CALL(memset32,NES_RAM,0,2048);
+	#else
+	init_cache(nesheader,1);
+	init_sprite_cache();
+	loadcart_asm();
+	memset32(NES_RAM,0,2048);
+	#endif
 
 
 }

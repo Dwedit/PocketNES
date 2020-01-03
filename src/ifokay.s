@@ -1,5 +1,7 @@
 #include "equates.h"
 
+#if !COMPY
+
 global_func if_okay
 //global_func if_okay_2
 global_func memcpy_if_okay
@@ -62,3 +64,5 @@ simpleswap_if_okay:
 //	ldr r3,=swap_prg_pages
 //	b if_okay2
 //#endif
+
+#endif
