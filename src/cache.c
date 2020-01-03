@@ -61,7 +61,7 @@ void assign_chr_pages2(u8* base, int start, int numpages)
 	assign_chr_pages(base-start*1024,start,start+numpages);
 }
 
-#if USE_GAME_SPECIFIC_HACKS
+#if USE_GAME_SPECIFIC_HACKS && !COMPY
 void swap_prg_pages(int page1, int page2, int numpages)
 {
 	int i;
