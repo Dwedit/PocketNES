@@ -970,7 +970,7 @@ void go_multiboot()
 	u8 *emu_src=(u8*)mb_binary;
 	u8 *emu_dest=(u8*)0x02000000;
 	u32 emu_size=(u32)mb_binary_end - (u32)mb_binary;
-	u32 max_mb_size=0x40000 - emu_size;
+	u32 max_mb_size=0x40000 - emu_size + 0x8000;
 	int i;
 	int key;
 	
@@ -979,11 +979,16 @@ void go_multiboot()
 	romsize += 48;
 	if (pogoshell) romsize = pogoshell_filesize;
 	romsize =((romsize-1)|3)+1;
+	u32 romsize_truncated = romsize;
+	if (romsize + emu_size > 0x40000)
+	{
+		romsize_truncated = 0x40000 - emu_size;
+	}
 	
 	if (romsize>max_mb_size)
 	{
 		cls(1);
-		drawtext(8, "Game is too big to multiboot",0);
+		drawtext(8, "Game is too big to multiboot.",0);
 		for(i=0;i<90;i++)			//wait a while
 		{
 			waitframe();
@@ -1009,12 +1014,22 @@ void go_multiboot()
 	REG_DM1CNT_H=0;
 	REG_DM2CNT_H=0;
 	REG_DM3CNT_H=0;
+	REG_DISPCNT = 0;
 	memset32((void*)0x06000000, 0, 0x18000);
+	if (romsize > 32768)
+	{
+		u8 *chunk = rom_addr + romsize - 0x8000;
+		memcpy32((void*)0x06000000, chunk + 0x0000, 0x2000);
+		memcpy32((void*)0x06004000, chunk + 0x2000, 0x2000);
+		memcpy32((void*)0x06014000, chunk + 0x4000, 0x4000);					
+	}
+	
 	memcpy32(emu_dest,emu_src,emu_size);
-	memcpy32(emu_dest+emu_size,rom_addr,romsize);
-	u8 *src = emu_dest+emu_size+romsize;
+	memcpy32(emu_dest+emu_size,rom_addr,romsize_truncated);
+	u8 *src = emu_dest+emu_size+romsize_truncated;
 	u8 *end = (u8*)0x02040000;
 	memset32(src, 0, end - src);
+	
 	__asm
 	(
 		"mov r0,#0xF6" "\n"	//Reset all except for VRAM and EWRAM
@@ -1051,7 +1066,7 @@ void go_multiboot()
 	if (rom_size>size)
 	{
 		cls(1);
-		drawtext(8, "Game is too big to multiboot",0);
+		drawtext(8, "Game is too big to multiboot.",0);
 		drawtext(9,"      Attempt anyway?",0);
 		drawtext(10,"        A=YES, B=NO",0);
 		oldkey=~REG_P1;			//reset key input

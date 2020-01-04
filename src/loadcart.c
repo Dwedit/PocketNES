@@ -784,7 +784,7 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 	u8* compdest = cachebase;
 	u8* mem_end = (u8*)0x02040000;
 	u8* cache_end_of_rom;
-
+	
 	u8 *const VRAM = (u8*)0x06000000; //VRAM macro is defined in Libgba, so we #undef-ed it to use it here
 	u8 *const vrom_bank_0 = VRAM + 0x0A000; //8k size
 	u8 *const vrom_bank_1 = VRAM + 0x0E000; //8k size  (24k with vrom_bank_2 folllowing it)
@@ -815,7 +815,12 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 		romsize1 = filesize;
 		romsize2 = 0;
 	}
-	bool do_vram_copy = false;
+	int do_vram_copy = 0;
+	
+	if (nes_header + 32 + filesize >= mem_end)
+	{
+		do_vram_copy = 2;
+	}
 	
 	//rom_is_compressed=1;
 	ewram_owner_is_sram=0;
@@ -834,15 +839,21 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 		{
 			if (comptype == 2)
 			{
-				if (romsize2 >= 32768)
+				//if (filesize >= 180*1024)
 				{
-					do_vram_copy = true;
-					u8 *last32k_compressed = compsrc + filesize - 4;
-					DEFERRED_CALL(memcpy32,VRAM + 0x0000, last32k_compressed - 0x8000, 0x2000);
-					DEFERRED_CALL(memcpy32,VRAM + 0x4000, last32k_compressed - 0x6000, 0x2000);
-					DEFERRED_CALL(memcpy32,VRAM + 0x14000, last32k_compressed - 0x4000, 0x4000);					
+					if (romsize2 >= 32768)
+					{
+						if (do_vram_copy == 0)
+						{
+							do_vram_copy = 1;
+							u8 *last32k_compressed = compsrc + filesize - 4;
+							DEFERRED_CALL(memcpy32,VRAM + 0x0000, last32k_compressed - 0x8000, 0x2000);
+							DEFERRED_CALL(memcpy32,VRAM + 0x4000, last32k_compressed - 0x6000, 0x2000);
+							DEFERRED_CALL(memcpy32,VRAM + 0x14000, last32k_compressed - 0x4000, 0x4000);
+						}
+					}
+					copysize -= 0x8000;
 				}
-				copysize -= 0x8000;
 			}
 			compcopy = mem_end - copysize;
 			//compcopy = end_of_cache - filesize;
@@ -979,8 +990,8 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 				DEFERRED_CALL(simpleswap32,VRAM + 0x4000, cachebase + 3 * 16384 + 0x2000, 0x2000);
 				DEFERRED_CALL(simpleswap32,VRAM + 0x14000, cachebase + 3 * 16384 + 0x4000, 0x4000);
 				
-				int compsrc2_bytepos = (u32)compsrc2 & 3;
-				u8 *compsrc2_aligned = (u8*)((u32)(compsrc2) & ~0x3);
+				int compsrc2_bytepos = (u32)compsrc2 & 0xFF;
+				u8 *compsrc2_aligned = (u8*)((u32)(compsrc2) & ~0xFF);
 				u8 *mem_end = (u8*)0x02040000;
 				u8 *compsrc2_new_aligned = compsrc2_aligned - 0x8000;
 				u8 *compsrc2_new = compsrc2_new_aligned + compsrc2_bytepos;
@@ -1062,8 +1073,8 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 				DEFERRED_CALL(simpleswap32,VRAM + 0x4000, cachebase + 4 * 16384 + 0x2000, 0x2000);
 				DEFERRED_CALL(simpleswap32,VRAM + 0x14000, cachebase + 4 * 16384 + 0x4000, 0x4000);
 				
-				int compsrc2_bytepos = (u32)compsrc2 & 3;
-				u8 *compsrc2_aligned = (u8*)((u32)(compsrc2) & ~0x3);
+				int compsrc2_bytepos = (u32)compsrc2 & 0xFF;
+				u8 *compsrc2_aligned = (u8*)((u32)(compsrc2) & ~0xFF);
 				u8 *mem_end = (u8*)0x02040000;
 				u8 *compsrc2_new_aligned = compsrc2_aligned - 0x8000;
 				u8 *compsrc2_new = compsrc2_new_aligned + compsrc2_bytepos;
@@ -1350,6 +1361,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 			u8 *moveDest = memoryToMove + amountToAdvance;
 			u8 *memoryToCopy = vrom_bank_2;
 			memmove32(moveDest, memoryToMove, 7 * 16384);
+			memcpy32(memoryToMove, vrom_bank_2, amountToAdvance);
 
 			cache_end_of_rom = 14 * 16384 + cachebase + 256;	//okay because 224K > 192K
 		}
@@ -2318,11 +2330,11 @@ APPEND_DATA const unsigned char MapperNumberOverlayList[] =
 {
 	4, 64, 74, 118, 119, 206, 245, 249, 100, 
 	18, 19, 69, 210, 100, 
-	16, 65, 163, 100, 
+	16, 163, 100, 
 	1, 15, 67, 105, 100, 
 	9, 10, 17, 22, 33, 42, 73, 75, 80, 228, 100, 
 	0, 2, 3, 7, 11, 32, 34, 40, 66, 68, 70, 71, 76, 77, 78, 79, 82, 86, 88, 92, 99, 151, 152, 180, 232, 100, 
-	21, 23, 24, 25, 26, 72, 85, 87, 93, 94, 97, 184, 100, 
+	21, 23, 24, 25, 26, 65, 72, 85, 87, 93, 94, 97, 184, 100, 
 	5, 100, 20, 
 };
 

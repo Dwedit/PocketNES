@@ -126,7 +126,9 @@ APPEND void C_entry()
 	*MEM_PALETTE=0;					//black background (avoids blue flash when doing multiboot)
 	REG_DISPCNT=0;					//screen ON, MODE0
 	
+	#if !COMPY
 	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
+	#endif
 	//Warning: VRAM code must be loaded at some point
 	
 	#if !COMPY
