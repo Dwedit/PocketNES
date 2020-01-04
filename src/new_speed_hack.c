@@ -79,15 +79,15 @@ const u8 konami_speedhack_cycles[]={
 };
 
 const u32 konami_speedhack_cycles_inverse[]={
-	0x100000000LL / (19 * 3), //mostgames
-	0x100000000LL / (14 * 3), //lifeforce
-	0x100000000LL / (14 * 3), //cv2
-	0x100000000LL / (14 * 3), //jarin ko chie
-	0x100000000LL / (14 * 3), //goonies2
-	0x100000000LL / (17 * 3), //ddribble
-	0x100000000LL / (17 * 3), //superc
-	0x100000000LL / (12 * 3), //contra
-	0x100000000LL / (12 * 3)  //gradius2
+	0x100000000LL / (19 * 3) + 1, //mostgames
+	0x100000000LL / (14 * 3) + 1, //lifeforce
+	0x100000000LL / (14 * 3) + 1, //cv2
+	0x100000000LL / (14 * 3) + 1, //jarin ko chie
+	0x100000000LL / (14 * 3) + 1, //goonies2
+	0x100000000LL / (17 * 3) + 1, //ddribble
+	0x100000000LL / (17 * 3) + 1, //superc
+	0x100000000LL / (12 * 3) + 1, //contra
+	0x100000000LL / (12 * 3) + 1  //gradius2
 
 };
 
