@@ -1,0 +1,8 @@
+Makefile_mb linguist-language=Makefile
+src/config.h linguist-language=C
+src/new_speed_hack.h linguist-language=C
+src/pocketnes_text.h linguist-language=C
+src/sram.h linguist-language=C
+src/equates.h  linguist-language=assembly
+src/macro.h  linguist-language=assembly
+src/6502mac.h  linguist-language=assembly
