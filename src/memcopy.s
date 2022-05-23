@@ -8,15 +8,19 @@
  .pool
 
 	global_func memset8
+	global_func memset8_to_sram
 	global_func memset16
 	global_func memset32
 	global_func memset32_
 	global_func memcpy32
+	global_func memcpy32_to_vram
 	global_func memset16_
 	global_func memcpy32_
 	global_func simpleswap32
 	global_func memmove32
 	global_func bytecopy
+	global_func bytecopy_from_sram
+	global_func bytecopy_to_sram
 #if COMPY
 	global_func bytecopy16
 #endif
@@ -76,6 +80,7 @@ memset16:
 	bx lr
 
 memcpy32:
+memcpy32_to_vram:
 @word aligned only
 @r0=dest, r1=src, r2=byte count
 	subs r2,r2,#32
@@ -103,6 +108,8 @@ memcpy32_words:
 	bgt 0b
 	bx lr
 
+bytecopy_from_sram:
+bytecopy_to_sram:
 bytecopy:
 	@r0=dest, r1=src, r2=byte count
 	ldrb r12,[r1],#1
@@ -183,6 +190,7 @@ simpleswap32:
  .text
  .align
  .pool
+memset8_to_sram:
 memset8:
 	orr r1,r1,r1,lsl#8
 	orr r1,r1,r1,lsl#16

@@ -792,7 +792,7 @@ void draw_input_text(int row, int column, char* str, int hilitedigit)
 	
 //	const int hilite=(1<<12)+0x4100,nohilite=0x4100;
 	
-	u16 *here;
+	vu16 *here;
 	row+=37;
 	row&=0x1F;
 	here=SCREENBASE+row*32+column+1;

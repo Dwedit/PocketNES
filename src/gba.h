@@ -9,7 +9,7 @@
 #undef SRAM
 
 #undef LZ77UnCompVram
-void LZ77UnCompVram(const void *source, void *dest);
+void LZ77UnCompVram(const void *source, vu16 *dest);
 
 
 
@@ -51,10 +51,10 @@ typedef struct {
 	u32 spritefollow;
 	u32 reserved;
 } romheader;	
-#define MEM_PALETTE (u16*)0x5000000
-#define MEM_VRAM (u16*)0x6000000
-#define MEM_OAM (u32*)0x7000000
-#define MEM_SRAM (u8*)0xE000000
+#define MEM_PALETTE (vu16*)0x5000000
+#define MEM_VRAM (vu16*)0x6000000
+#define MEM_OAM (vu32*)0x7000000
+#define MEM_SRAM (vu8*)0xE000000
 
 /*
 #define INTR_VECT *(u32*)0x3007FFC

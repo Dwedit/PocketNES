@@ -325,14 +325,6 @@ _ABS	= 4						@absolute
 @	bic addy,addy,#0xff0000 @Zelda2 needs this
 .endm
 
-.macro doZPI							@Zeropage indirect     ($nn)
-	_type	=      _ABS
-	ldrb r0,[m6502_pc],#1
-	ldrb addy,[r0,cpu_zpage]!
-	ldrb r1,[r0,#1]
-	orr addy,addy,r1,lsl#8
-.endm
-
 .macro doZ                             @zero page              $nn
 	_type	=      _ZP
 	ldrb addy,[m6502_pc],#1

@@ -12,9 +12,9 @@
 #define FONT_CHAR_PAGE 0
 #define FONT_PALETTE_NUMBER 4
 #define UI_TILEMAP_NUMBER 4
-#define SCREENBASE (u16*)((u8*)MEM_VRAM + UI_TILEMAP_NUMBER*2048 )
-#define FONT_MEM (u16*)((u8*)MEM_VRAM + FONT_CHAR_PAGE*16384 + FONT_MEM_FIRSTCHAR*32 )
-#define FONT_PAL (u16*)((u8*)MEM_PALETTE + FONT_PALETTE_NUMBER*16*2 )
+#define SCREENBASE ((vu16*)((u8*)MEM_VRAM + UI_TILEMAP_NUMBER*2048 ))
+#define FONT_MEM ((vu16*)((u8*)MEM_VRAM + FONT_CHAR_PAGE*16384 + FONT_MEM_FIRSTCHAR*32 ))
+#define FONT_PAL ((vu16*)((u8*)MEM_PALETTE + FONT_PALETTE_NUMBER*16*2 ))
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,6 @@ extern u32 ui_x;
 extern u32 ui_y;
 
 void move_ui(void);
-
 
 void loadfont(void);
 void loadfontpal(void);

@@ -56,12 +56,12 @@ void swap_column(int col)
 	
 	for (row=0;row<21;row++)
 	{
-		u16 from_vram=(SCREENBASE)[row*32+col];
+		u16 from_vram=SCREENBASE[row*32+col];
 		u8 from_textmem=TEXTMEM[row][col];
 		u16 to_vram=(lookup_character(from_textmem & 0x7F) + FONT_PALETTE_NUMBER * 0x1000 + (from_textmem >> 7) * 0x1000);
 		u8 to_textmem=( lookup_character_inverse(from_vram) + (from_vram & 0x1000) / 32);
 		TEXTMEM[row][col]=to_textmem;
-		(SCREENBASE)[row*32+col]=to_vram;
+		SCREENBASE[row*32+col]=to_vram;
 	}
 }
 
@@ -106,7 +106,7 @@ APPEND void loadfont()
 }
 APPEND void loadfontpal()
 {
-	memcpy32(FONT_PAL,&fontpal,64);
+	memcpy32_to_vram(FONT_PAL,&fontpal,64);
 }
 void get_ready_to_display_text()
 {
@@ -161,7 +161,7 @@ void cls(int chrmap)
 	//chrmap is a bitfield
 	//1 = left, 2 = right, 4 = whichever is off the screen, 8 = whichever is on the screen
 	int i=0,len=0x200;
-	u32 *scr=(u32*)SCREENBASE;
+	vu32 *scr=(vu32*)SCREENBASE;
 	
 	const u32 FILL_PATTERN = (FONT_MEM_FIRSTCHAR + FONT_PALETTE_NUMBER*0x1000)*0x10001;
 	
@@ -186,7 +186,7 @@ void drawtext(int row,const char *str,int hilite)
 {
 	if ((row >= 32 && ui_x>=256) || (row <32 && ui_x<256))
 	{
-		u16 *here=SCREENBASE+(row&0x1F)*32;
+		vu16 *here=SCREENBASE+(row&0x1F)*32;
 		int i=0;
 		u16 asterisk;
 		u16 space;
@@ -237,7 +237,7 @@ void drawtext(int row,const char *str,int hilite)
 			}
 			for (;i<29;i++)
 			{
-				*dest=' ';
+				*dest++=' ';
 			}
 		}
 	}

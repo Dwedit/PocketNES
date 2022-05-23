@@ -26,18 +26,18 @@ extern u8 spr_cache_map[256];
 
 extern u32 *_dmabankbuffer;
 
-extern u32 volatile *_scrollbuff;
-extern u32 volatile *_dmascrollbuff;
-extern u8 volatile *_nesoambuff;
-extern u8 volatile *_dmanesoambuff;
-extern u16 volatile *_bg0cntbuff;
-extern u16 volatile *_dmabg0cntbuff;
-extern u16 volatile *_dispcntbuff;
-extern u16 volatile *_dmadispcntbuff;
+extern u32 *volatile _scrollbuff;
+extern u32 *volatile _dmascrollbuff;
+extern u8 *volatile _nesoambuff;
+extern u8 *volatile _dmanesoambuff;
+extern u16 *volatile _bg0cntbuff;
+extern u16 *volatile _dmabg0cntbuff;
+extern u16 *volatile _dispcntbuff;
+extern u16 *volatile _dmadispcntbuff;
 
-extern u32 volatile *_dma0buff;
-extern u16 volatile *_dma1buff;
-extern u16 volatile *_dma3buff;
+extern u32 *volatile _dma0buff;
+extern u16 *volatile _dma1buff;
+extern u16 *volatile _dma3buff;
 
 #define dmabankbuffer _dmabankbuffer
 #define dmascrollbuff _dmascrollbuff
@@ -336,8 +336,11 @@ extern u32 sram_W2[];
 #endif
 
 u8* bytecopy(void* dest, const void* src, int bytesToCopy);
+u8* bytecopy_to_sram(vu8* dest, const void* src, int bytesToCopy);
+u8* bytecopy_from_sram(void* dest, const vu8* src, int bytesToCopy);
 u8* bytecopy16(void* dest, const void* src, int bytesToCopy);
 u32* memcpy32(void* dest, const void* src, int bytesToCopy);
+u32* memcpy32_to_vram(vu16* dest, const void* src, int bytesToCopy);
 u32* memmove32(void* dest, const void* src, int bytesToMove);
 u32* memset32(void* dest, u32 value, int bytesToSet);
 void memset8(void* dest, u8 value, int bytesToSet);  //halfword aligned only

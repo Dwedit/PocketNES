@@ -1574,20 +1574,20 @@ static void DVAL_ASSERT(lzo_uint32 dv, const lzo_byte *p)
 #define DO_COMPRESS     lzo1x_1_compress
 
 static
-lzo_uint do_compress     ( const lzo_byte *in , lzo_uint  in_len,
+lzo_uint do_compress     ( const volatile lzo_byte *in , lzo_uint  in_len,
 				 lzo_byte *out, lzo_uint *out_len,
 				 lzo_voidp wrkmem )
 {
 #if 0 && defined(__GNUC__) && defined(__i386__)
-    register const lzo_byte *ip __asm__("%esi");
+    register const volatile lzo_byte *ip __asm__("%esi");
 #else
-    register const lzo_byte *ip;
+    register const volatile lzo_byte *ip;
 #endif
     lzo_byte *op;
-    const lzo_byte * const in_end = in + in_len;
-    const lzo_byte * const ip_end = in + in_len - M2_MAX_LEN - 5;
-    const lzo_byte *ii;
-    lzo_dict_p const dict = (lzo_dict_p) wrkmem;
+    const volatile lzo_byte * const in_end = in + in_len;
+    const volatile lzo_byte * const ip_end = in + in_len - M2_MAX_LEN - 5;
+    const volatile lzo_byte *ii;
+    volatile lzo_dict_p const dict = (volatile lzo_dict_p) wrkmem;
 
     op = out;
     ip = in;
@@ -1597,9 +1597,9 @@ lzo_uint do_compress     ( const lzo_byte *in , lzo_uint  in_len,
     for (;;)
     {
 #if 0 && defined(__GNUC__) && defined(__i386__)
-	register const lzo_byte *m_pos __asm__("%edi");
+	register const volatile lzo_byte *m_pos __asm__("%edi");
 #else
-	register const lzo_byte *m_pos;
+	register const volatile lzo_byte *m_pos;
 #endif
 	lzo_moff_t m_off;
 	lzo_uint m_len;
@@ -1756,8 +1756,8 @@ match:
 	else
 	{
 	    {
-		const lzo_byte *end = in_end;
-		const lzo_byte *m = m_pos + M2_MAX_LEN + 1;
+		const volatile lzo_byte *end = in_end;
+		const volatile lzo_byte *m = m_pos + M2_MAX_LEN + 1;
 		while (ip < end && *m == *ip)
 		    m++, ip++;
 		m_len = (ip - ii);
@@ -1819,7 +1819,7 @@ match_done:
 }
 
 LZO_PUBLIC(int)
-DO_COMPRESS      ( const lzo_byte *in , lzo_uint  in_len,
+DO_COMPRESS      ( const volatile lzo_byte *in , lzo_uint  in_len,
 			 lzo_byte *out, lzo_uint *out_len,
 			 lzo_voidp wrkmem )
 {
@@ -1841,7 +1841,7 @@ DO_COMPRESS      ( const lzo_byte *in , lzo_uint  in_len,
 
     if (t > 0)
     {
-	const lzo_byte *ii = in + in_len - t;
+	const volatile lzo_byte *ii = in + in_len - t;
 
 	if (op == out && t <= 238)
 	    *op++ = LZO_BYTE(17 + t);
@@ -1970,13 +1970,13 @@ DO_COMPRESS      ( const lzo_byte *in , lzo_uint  in_len,
 
 #if defined(DO_DECOMPRESS)
 LZO_PUBLIC(int)
-DO_DECOMPRESS  ( const lzo_byte *in , lzo_uint  in_len,
+DO_DECOMPRESS  ( const volatile lzo_byte *in , lzo_uint  in_len,
 		       lzo_byte *out, lzo_uint *out_len,
 		       lzo_voidp wrkmem )
 #endif
 {
     register lzo_byte *op;
-    register const lzo_byte *ip;
+    register const volatile lzo_byte *ip;
     register lzo_uint t;
 #if defined(COPY_DICT)
     lzo_uint m_off;
@@ -1985,7 +1985,7 @@ DO_DECOMPRESS  ( const lzo_byte *in , lzo_uint  in_len,
     register const lzo_byte *m_pos;
 #endif
 
-    const lzo_byte * const ip_end = in + in_len;
+    const volatile lzo_byte * const ip_end = in + in_len;
 #if defined(HAVE_ANY_OP)
     lzo_byte * const op_end = out + *out_len;
 #endif
@@ -2452,13 +2452,13 @@ lookbehind_overrun:
 
 #if defined(DO_DECOMPRESS)
 LZO_PUBLIC(int)
-DO_DECOMPRESS  ( const lzo_byte *in , lzo_uint  in_len,
+DO_DECOMPRESS  ( const volatile lzo_byte *in , lzo_uint  in_len,
 		       lzo_byte *out, lzo_uint *out_len,
 		       lzo_voidp wrkmem )
 #endif
 {
     register lzo_byte *op;
-    register const lzo_byte *ip;
+    register const volatile lzo_byte *ip;
     register lzo_uint t;
 #if defined(COPY_DICT)
     lzo_uint m_off;
@@ -2467,7 +2467,7 @@ DO_DECOMPRESS  ( const lzo_byte *in , lzo_uint  in_len,
     register const lzo_byte *m_pos;
 #endif
 
-    const lzo_byte * const ip_end = in + in_len;
+    const volatile lzo_byte * const ip_end = in + in_len;
 #if defined(HAVE_ANY_OP)
     lzo_byte * const op_end = out + *out_len;
 #endif

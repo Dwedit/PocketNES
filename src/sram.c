@@ -93,7 +93,7 @@ void compressstate(lzo_uint size,u16 type,u8 *src,void *workspace);
 int findstate(u32 checksum,int type,stateheader **stateptr);
 void uncompressstate(int rom,stateheader *sh);
 int using_flashcart(void);
-int save_new_sram(u8* SRAM_SOURCE);
+int save_new_sram(vu8* SRAM_SOURCE);
 void register_sram_owner(void);
 void no_sram_owner(void);
 void setup_sram_after_loadstate(void);
@@ -127,7 +127,8 @@ void display_assert_error(char *s)
 }*/
 bool sram_matches()
 {
-	u8 *p1, *p2;
+	vu8 *p1;
+	u8 *p2;
 	int i;
 	p1=MEM_SRAM+save_start;
 	p2=NES_SRAM;
@@ -177,11 +178,9 @@ void errmsg(char *s) {
 	drawtext(32+9,"                     ",0);
 }*/
 
-
-
 void flush_end_sram()
 {
-	u8* sram=MEM_SRAM;
+	vu8* sram=MEM_SRAM;
 	int i;
 	int save_end = save_start + 0x2000;
 	for (i=save_start;i<save_end;i++)
@@ -193,6 +192,9 @@ void flush_end_sram()
 
 void probe_sram_size()
 {
+	//probe only once for a 64K SRAM build and we already detected a 32K SRAM size.
+	if (!SAVE32 && save_start == SAVE_START_32K) return;
+
 	vu8* sram=MEM_SRAM;
 	vu8* sram2=MEM_SRAM + 0x8000;
 	u32 val1;
@@ -200,28 +202,50 @@ void probe_sram_size()
 	u32 newval2;
 	
 	val1 = sram[0]+(sram[1]<<8)+(sram[2]<<16)+(sram[3]<<24);
-		val2 = sram2[0]+(sram2[1]<<8)+(sram2[2]<<16)+(sram2[3]<<24);
-		
-	if ((val1 == STATEID || val1 == STATEID2) && val2 == val1)
+	val2 = sram2[0]+(sram2[1]<<8)+(sram2[2]<<16)+(sram2[3]<<24);
+	
+	if (val2 == val1)
 	{
-		sram[0] = (val1^(STATEID^STATEID2)) & 0xFF;
-		newval2 = sram2[0]+(sram2[1]<<8)+(sram2[2]<<16)+(sram2[3]<<24);
-		//value has changed => 32k save is mirrored
-		if (newval2 != val2)
+		if (val1 == STATEID || val1 == STATEID2)
 		{
-			save_start = SAVE_START_32K;
+			sram[0] = (val1^(STATEID^STATEID2)) & 0xFF;
+			newval2 = (val2 & 0xFFFFFF00) | sram2[0];
+			//value has changed => 32k save is mirrored
+			if (newval2 != val2)
+			{
+				save_start = SAVE_START_32K;
+			}
+			else
+			{
+				save_start = SAVE_START_64K;
+			}
+			sram[0] = STATEID & 0xFF;
 		}
 		else
 		{
-			save_start = SAVE_START_64K;
+			//no state ID in SRAM, xor first byte with FF and see if it changed elsewhere as well
+			sram[0] ^= 0xFF;
+			if (sram2[0] == sram[0])
+			{
+				save_start = SAVE_START_32K;
+			}
+			else
+			{
+				save_start = SAVE_START_64K;
+			}
+			sram[0] ^= 0xFF;
 		}
-		sram[0] = STATEID & 0xFF;
+	}
+	else
+	{
+		//no match, it's 64K
+		save_start = SAVE_START_64K;
 	}
 }
 
 
 void getsram() {		//copy GBA sram to BUFFER1
-	u8 *sram=MEM_SRAM;
+	vu8 *sram=MEM_SRAM;
 	u8 *buff1=buffer1;
 	u32 *p;
 	
@@ -237,14 +261,14 @@ void getsram() {		//copy GBA sram to BUFFER1
 //	else
 	{
 		probe_sram_size();  //stop NO$GBA from copying out-of-range data
-		bytecopy(buff1,sram,save_start);	//copy everything to buffer1
+		bytecopy_from_sram(buff1,sram,save_start);	//copy everything to buffer1
 		p=(u32*)buff1;
 		if(!(*p == STATEID || *p == STATEID2)) {	//valid savestate data?
 			*p=STATEID;	//nope.  initialize
 			*(p+1)=0;
 			*(p+2)=0xFFFFFFFF;
 			
-			bytecopy(sram,buff1,12);
+			bytecopy_to_sram(sram,buff1,12);
 			probe_sram_size();
 		}
 		ewram_owner_is_sram=1;
@@ -334,7 +358,7 @@ int updatestates(int index,int erase,int type) {
 		*dst++=0;
 		total++;
 	}
-	bytecopy(MEM_SRAM,BUFFER1,total);	//copy to sram
+	bytecopy_to_sram(MEM_SRAM,BUFFER1,total);	//copy to sram
 	
 	findconfig(); //config may move after altering the filesystem
 	
@@ -830,9 +854,10 @@ int backup_nes_sram(int prompt_delete_menu)
 
 //make new saved sram (using NES_SRAM contents)
 //this is to ensure that we have all info for this rom and can save it even after this rom is removed
-int save_new_sram(u8* SRAM_SOURCE) {
+int save_new_sram(vu8 *SRAM_SOURCE)
+{
 	u8 *sram_source_copy = BUFFER1+save_start;
-	bytecopy(sram_source_copy,SRAM_SOURCE,0x2000);
+	bytecopy_from_sram(sram_source_copy,SRAM_SOURCE,0x2000);
 	compressstate(0x2000,SRAMSAVE,sram_source_copy,BUFFER2);
 	return updatestates(65536,0,SRAMSAVE);
 }
@@ -857,7 +882,7 @@ void get_saved_sram(void)
 		//probably shouldn't do this
 /*
 		if(i>=0) if(chk==cfg->sram_checksum) {	//SRAM is already ours
-			bytecopy(NES_SRAM,MEM_SRAM+0xe000,0x2000);
+			bytecopy_from_sram(NES_SRAM,MEM_SRAM+0xe000,0x2000);
 			if(j<0) save_new_sram();	//save it if we need to
 			return;
 		}
@@ -868,7 +893,7 @@ void get_saved_sram(void)
 		} else { //pack new sram and save it.
 			save_new_sram(NES_SRAM);
 		}
-		bytecopy(MEM_SRAM+save_start,NES_SRAM,0x2000);
+		bytecopy_to_sram(MEM_SRAM+save_start,NES_SRAM,0x2000);
 		register_sram_owner();//register new sram owner
 
 	}
@@ -905,7 +930,7 @@ void setup_sram_after_loadstate() {
 		no_sram_owner();
 		
 		//copy NES_SRAM to real sram
-		bytecopy(MEM_SRAM+save_start,NES_SRAM,0x2000);
+		bytecopy_to_sram(MEM_SRAM+save_start,NES_SRAM,0x2000);
 		
 		//set owner
 		register_sram_owner();
@@ -927,7 +952,7 @@ void setup_sram_after_loadstate() {
 		if(i>=0) if(chk!=cfg->sram_checksum) {//if someone else was using sram, save it
 			backup_nes_sram(0);
 		}
-		bytecopy(MEM_SRAM+save_start,NES_SRAM,0x2000);		//copy nes sram to real sram
+		bytecopy_to_sram(MEM_SRAM+save_start,NES_SRAM,0x2000);		//copy nes sram to real sram
 		i=findstate(chk,SRAMSAVE,(stateheader**)&cfg);	//does packed SRAM for this rom exist?
 		if(i<0)						//if not, create it
 			save_new_sram();
@@ -1058,7 +1083,7 @@ void writeconfig()
 		{
 			//config already exists, update sram directly (faster)
 //			breakpoint();
-			bytecopy((u8*)MEM_SRAM+config_position,(u8*)cfg,sizeof(configdata));
+			bytecopy_to_sram((u8*)MEM_SRAM+config_position,(u8*)cfg,sizeof(configdata));
 			if (ewram_owner_is_sram==1)
 			{
 				bytecopy((u8*)BUFFER1+config_position,(u8*)cfg,sizeof(configdata));
@@ -1136,7 +1161,7 @@ void readconfig() {
 #if 0
 void clean_nes_sram() {
 	int i,j;
-	u8 *nes_sram_ptr = MEM_SRAM+save_start;
+	vu8 *nes_sram_ptr = MEM_SRAM+save_start;
 	configdata *cfg;
 
 	if(!using_flashcart())
@@ -1159,7 +1184,7 @@ void clean_nes_sram() {
 	if(i<0) {	//create new config
 		updatestates(0,0,CONFIGSAVE);
 	} else {		//config already exists, update sram directly (faster)
-		bytecopy((u8*)cfg-BUFFER1+MEM_SRAM,(u8*)cfg,sizeof(configdata));
+		bytecopy_to_sram((u8*)cfg-BUFFER1+MEM_SRAM,(u8*)cfg,sizeof(configdata));
 	}
 }
 #endif

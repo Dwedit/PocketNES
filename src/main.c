@@ -1,7 +1,7 @@
 #include "includes.h"
 
-#define POGO_FILEHEAD (*(volatile u8**)0x0203fbfc)
-#define POGO_FILETAIL (*(volatile u8**)0x0203fbf8)
+#define POGO_FILEHEAD (*(u8**)0x0203fbfc)
+#define POGO_FILETAIL (*(u8**)0x0203fbf8)
 
 /*
 #include <stdio.h>

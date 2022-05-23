@@ -25,7 +25,9 @@ void redecompress()
 }
 #endif
 
+#if COMPY
 static void init_cache_deferred(u8* nes_header);
+#endif
 
 APPEND static void read_rom_header(u8 *nesheader)
 {
@@ -633,7 +635,7 @@ APPEND static void assign_pages_deferred(int comptype, u8 *_rombase, int page_si
 			//assign page EF (24k)
 			DEFERRED_CALL(assign_chr_pages2,vrom_bank_1,104,24);
 
-			const u8 *const a = _rombase + 7 * 16384 + 256;
+			u8 *const a = _rombase + 7 * 16384 + 256;
 			//0123456F89ABCD E 7	- bank 7 and F are now swapped
 			//reassign 89ABCD
 			DEFERRED_CALL(assign_chr_pages2,a + 16384, 0, 6 * 16);
@@ -762,7 +764,7 @@ static void assign_pages(int comptype, u8 *_rombase, int page_size)
 			//assign page EF (24k)
 			assign_chr_pages2(vrom_bank_1,104,24);
 
-			const u8 *const a = _rombase + 7 * 16384 + 256;
+			u8 *const a = _rombase + 7 * 16384 + 256;
 			//0123456F89ABCD E 7	- bank 7 and F are now swapped
 			//reassign 89ABCD
 			assign_chr_pages2(a + 16384, 0, 6 * 16);
