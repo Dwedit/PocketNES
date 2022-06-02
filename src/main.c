@@ -176,7 +176,7 @@ APPEND void C_entry()
 	if(pogoshell)
 	{
 		//find the filename
-		char *s=(char*)0x0203fc08;
+		volatile char *s=(volatile char*)0x0203fc08;
 		//0203FC08 contains argv[0], 00, then argv[1].
 		//advance past first null
 		while (*s++ != 0);
