@@ -112,7 +112,6 @@ APPEND void C_entry()
 #endif
 	gbaversion=CheckGBAVersion();
 
-	
 #if SAVE
 	BUFFER1 = ewram_start;
 	BUFFER2 = BUFFER1+0x10000;
@@ -156,16 +155,16 @@ APPEND void C_entry()
 #endif
 	}
 #endif
+	
 	bool wantToSplash = false;
 	const u16* splashImage = NULL;
 	
 #if ROMMENU
 	if (!pogoshell)
 	{
-		const u16 *splashImage = NULL;
 		u8 *p;
 		u32 nes_id=0x1a530000+ne;
-		if (find_nes_header(textstart+sizeof(romheader))==NULL)
+		if (find_nes_header(textstart)==NULL)
 		{
 			wantToSplash = true;
 			splashImage = (const u16*)textstart;
@@ -210,17 +209,7 @@ APPEND void C_entry()
 	
 	if (!wantToSplash)
 	{
-		//Do the fade before anything graphical so we can fade to black from Pogoshell's screen.  Doesn't work in newest pogoshell anymore.
-		if(REG_DISPCNT==FORCE_BLANK)	//is screen OFF?
-			REG_DISPCNT=0;				//screen ON
-		*MEM_PALETTE=0x7FFF;			//white background
-		REG_BLDCNT=0x00ff;				//brightness decrease all
-		for(i=0;i<17;i++) {
-			REG_BLDY=i;					//fade to black
-			waitframe();
-		}
-		*MEM_PALETTE=0;					//black background (avoids blue flash when doing multiboot)
-		REG_DISPCNT=0;					//screen ON, MODE0
+		pocketnes_fade_from_white();
 	}
 	
 	#if !COMPY
@@ -247,8 +236,6 @@ APPEND void C_entry()
 	crash_disabled = 1;
 	#endif
 	
-//	PPU_reset();
-
 #if ROMMENU
 	if (roms == 0)
 	{
@@ -271,6 +258,11 @@ APPEND void C_entry()
 	if (splashImage != NULL)
 	{
 		splash(splashImage);
+		memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
+		get_ready_to_display_text();
+		loadfont();
+		ui_x=0;
+		move_ui();
 	}
 #else
 	roms = 1;
@@ -326,11 +318,31 @@ void jump_to_rommenu()
 	while (true);
 }
 
+void pocketnes_fade_from_white()
+{
+	//Do the fade before anything else so we can fade to black from Pogoshell's screen.  Doesn't work in newest pogoshell anymore.
+	if(REG_DISPCNT==FORCE_BLANK)	//is screen OFF?
+		REG_DISPCNT=0;				//screen ON
+	*MEM_PALETTE=0x7FFF;			//white background
+	REG_BLDCNT=0x00ff;				//brightness decrease all
+	for(int i=0;i<17;i++) {
+		REG_BLDY=i;					//fade to black
+		waitframe();
+	}
+	*MEM_PALETTE=0;					//black background (avoids blue flash when doing multiboot)
+	REG_DISPCNT=0;					//screen ON, MODE0
+}
+
 //show splash screen
-APPEND void splash(const u16 *image) {
+APPEND void splash(const u16 *image)
+{
 	int i;
+	u32 lastJoypad;
+	u32 currentJoypad;
+	u32 keysHit;
 
 	REG_DISPCNT=FORCE_BLANK;	//screen OFF
+	*MEM_PALETTE=0x7FFF;			//white background
 	memcpy32((u32*)MEM_VRAM,(const u32*)image,240*160*2);
 	waitframe();
 //	REG_BG2CNT=0x0000;
@@ -339,18 +351,26 @@ APPEND void splash(const u16 *image) {
 		setbrightnessall(i);
 		waitframe();
 	}
+	currentJoypad = REG_P1;
 	for(i=0;i<150;i++) {	//wait 2.5 seconds
 		waitframe();
-		if (REG_P1==0x030f){
+		lastJoypad = currentJoypad;
+		currentJoypad = REG_P1;
+		if (currentJoypad==0x030f)
+		{
 			gameboyplayer=1;
 			gbaversion=3;
 		}
+		else
+		{
+			keysHit = (~currentJoypad) & (lastJoypad ^ currentJoypad);
+			if (keysHit & 0x30F)
+			{
+				i = 150;
+			}
+		}
+
 	}
-	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
-	get_ready_to_display_text();
-	loadfont();
-	ui_x=0;
-	move_ui();
 }
 
 #if COMPY
