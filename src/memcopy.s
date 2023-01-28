@@ -8,7 +8,6 @@
  .pool
 
 	global_func memset8
-	global_func memset8_to_sram
 	global_func memset16
 	global_func memset32
 	global_func memset32_
@@ -190,7 +189,6 @@ simpleswap32:
  .text
  .align
  .pool
-memset8_to_sram:
 memset8:
 	orr r1,r1,r1,lsl#8
 	orr r1,r1,r1,lsl#16

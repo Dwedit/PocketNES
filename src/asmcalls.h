@@ -344,6 +344,8 @@ u32* memcpy32_to_vram(vu16* dest, const void* src, int bytesToCopy);
 u32* memmove32(void* dest, const void* src, int bytesToMove);
 u32* memset32(void* dest, u32 value, int bytesToSet);
 void memset8(void* dest, u8 value, int bytesToSet);  //halfword aligned only
+void memset16(void* dest, u16 value, int halfwordsToSet);  //halfword aligned only
+
 
 /*
 memory.s(7): EXPORT void

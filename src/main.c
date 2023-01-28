@@ -77,6 +77,15 @@ APPEND int main()
 
 #endif
 
+APPEND void load_vram_code()
+{
+	//load VRAM CODE
+	extern u8 __vram1_start[], __vram1_lma[], __vram1_end[];
+	u32 vram1_size = ((((u8*)__vram1_end - (u8*)__vram1_start) - 1) | 3) + 1;
+	memcpy32((u32*)__vram1_start,(const u32*)__vram1_lma,vram1_size);
+}
+
+void dummy();
 
 APPEND void C_entry()
 {
@@ -89,49 +98,7 @@ APPEND void C_entry()
 	if(*timeregs & 1) rtc=1;
 #endif
 	
-	scaling = 3;  //default mode is scaled with spirtes
-	
-#if !GCC
-	ewram_start = (u8*)	&Image$$RO$$Limit;
-	if (ewram_start>=(u8*)0x08000000)
-	{
-		ewram_start=(u8*)0x02000000;
-	}
-#endif
-	end_of_exram = (u8*)&END_OF_EXRAM;
-	
-	okay_to_run_hdma = 0;
-	irqInit();
-	//key,vblank,timer1,timer2,timer3,serial interrupt enable
-	irqSet(IRQ_TIMER1,timer1interrupt);
-	irqSet(IRQ_TIMER2,timer_2_interrupt);
-	irqSet(IRQ_TIMER3,timer_3_interrupt);
-	irqSet(IRQ_SERIAL,serialinterrupt);
-	irqSet(IRQ_VCOUNT,vcountinterrupt);
-	irqSet(IRQ_HBLANK,hblankinterrupt);
-	irqEnable(IRQ_KEYPAD | IRQ_VBLANK | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_TIMER3 | IRQ_SERIAL);
-	REG_DISPSTAT &= ~(LCDC_HBL | LCDC_VCNT);
-	REG_IE |= IRQ_VCOUNT | IRQ_HBLANK;
-	//Warning: VRAM code must be loaded before the Vblank handler is installed
-	
-	//Do the fade before anything else so we can fade to black from Pogoshell's screen.  Doesn't work in newest pogoshell anymore.
-	if(REG_DISPCNT==FORCE_BLANK)	//is screen OFF?
-		REG_DISPCNT=0;				//screen ON
-	*MEM_PALETTE=0x7FFF;			//white background
-	REG_BLDCNT=0x00ff;				//brightness decrease all
-	for(i=0;i<17;i++) {
-		REG_BLDY=i;					//fade to black
-		waitframe();
-	}
-	*MEM_PALETTE=0;					//black background (avoids blue flash when doing multiboot)
-	REG_DISPCNT=0;					//screen ON, MODE0
-	
-	#if !COMPY
-	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
-	#endif
-	//Warning: VRAM code must be loaded at some point
-	
-	#if !COMPY
+#if !COMPY
 	temp=(u32)POGO_FILEHEAD;
 	pogoshell=((temp & 0xFE000000) == 0x08000000)?1:0;
 	if (pogoshell)
@@ -139,32 +106,12 @@ APPEND void C_entry()
 		u32 tail = (u32)POGO_FILETAIL;
 		pogoshell_filesize = tail - temp;
 	}
-	#else
+#else
 	pogoshell = 0;
 	pogoshell_filesize = 0;
-	#endif
-	gbaversion=CheckGBAVersion();
-	
-	//load font+palette
-	loadfont();
-	loadfontpal();
-	ui_x=0x100;
-#if ROMMENU
-	move_ui();
 #endif
-//	REG_BG2HOFS=0x0100;		//Screen left
-	REG_BG2CNT=0x0400;	//16color 512x256 CHRbase0 SCRbase6 Priority0
-	
-	extern void init_speed_hacks();
-	init_speed_hacks();
-	
-	//PPU_init();
-	build_chr_decode();
-	#if CRASH
-	crash_disabled = 1;
-	#endif
-	
-//	PPU_reset();
+	gbaversion=CheckGBAVersion();
+
 	
 #if SAVE
 	BUFFER1 = ewram_start;
@@ -209,11 +156,12 @@ APPEND void C_entry()
 #endif
 	}
 #endif
-
+	bool wantToSplash = false;
+	const u16* splashImage = NULL;
+	
 #if ROMMENU
 	if (!pogoshell)
 	{
-		bool wantToSplash = false;
 		const u16 *splashImage = NULL;
 		u8 *p;
 		u32 nes_id=0x1a530000+ne;
@@ -233,33 +181,96 @@ APPEND void C_entry()
 			p=find_nes_header(p);
 			i++;
 		}
-		
 		roms=i;
-		if (i == 0)
-		{
-			#if !COMPY
-			get_ready_to_display_text();
-			cls(3);
-			ui_x=0;
-			move_ui();
-			drawtext(0,"No ROMS found!",0);
-			drawtext(1,"Use PocketNES Menu Maker",0);
-			drawtext(2,"to build a compilation ROM,",0);
-			drawtext(3,"or use Pogoshell with a",0);
-			drawtext(4,"supported flash cartridge.",0);
-			#endif
-			while (1)
-			{
-				waitframe();
-			}
+	}
+#else
+	roms = 1;
+#endif
+	
+	scaling = 3;  //default mode is scaled with spirtes
+	
+#if !GCC
+	ewram_start = (u8*)	&Image$$RO$$Limit;
+	if (ewram_start>=(u8*)0x08000000)
+	{
+		ewram_start=(u8*)0x02000000;
+	}
+#endif
+	end_of_exram = (u8*)&END_OF_EXRAM;
+	
+	okay_to_run_hdma = 0;
+	//Set interrupt handlers to dummy function, and set IRQ vector
+	irqInit();
+	//key,vblank,timer1,timer2,timer3,serial interrupt enable
+	irqEnable(IRQ_KEYPAD | IRQ_VBLANK | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_TIMER3 | IRQ_SERIAL);
+	//Disable vcount and hblank interrupts in DISPSTAT, but enable them in REG_IE
+	REG_DISPSTAT &= ~(LCDC_HBL | LCDC_VCNT);
+	REG_IE |= IRQ_VCOUNT | IRQ_HBLANK;
+	//Warning: VRAM code must be loaded before interrupt handlers are installed, so we install them happens after we load the VRAM overlay.
+	
+	if (!wantToSplash)
+	{
+		//Do the fade before anything graphical so we can fade to black from Pogoshell's screen.  Doesn't work in newest pogoshell anymore.
+		if(REG_DISPCNT==FORCE_BLANK)	//is screen OFF?
+			REG_DISPCNT=0;				//screen ON
+		*MEM_PALETTE=0x7FFF;			//white background
+		REG_BLDCNT=0x00ff;				//brightness decrease all
+		for(i=0;i<17;i++) {
+			REG_BLDY=i;					//fade to black
+			waitframe();
 		}
-		if (wantToSplash)
+		*MEM_PALETTE=0;					//black background (avoids blue flash when doing multiboot)
+		REG_DISPCNT=0;					//screen ON, MODE0
+	}
+	
+	#if !COMPY
+	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
+	#endif
+	//Warning: VRAM code must be loaded at some point
+	
+	//load font+palette
+	loadfont();
+	loadfontpal();
+	ui_x=0x100;
+#if ROMMENU
+	move_ui();
+#endif
+//	REG_BG2HOFS=0x0100;		//Screen left
+	REG_BG2CNT=0x0400;	//16color 512x256 CHRbase0 SCRbase6 Priority0
+	
+	extern void init_speed_hacks();
+	init_speed_hacks();
+	
+	//PPU_init();
+	build_chr_decode();
+	#if CRASH
+	crash_disabled = 1;
+	#endif
+	
+//	PPU_reset();
+
+#if ROMMENU
+	if (roms == 0)
+	{
+		#if !COMPY
+		get_ready_to_display_text();
+		cls(3);
+		ui_x=0;
+		move_ui();
+		drawtext(0,"No ROMS found!",0);
+		drawtext(1,"Use PocketNES Menu Maker",0);
+		drawtext(2,"to build a compilation ROM,",0);
+		drawtext(3,"or use Pogoshell with a",0);
+		drawtext(4,"supported flash cartridge.",0);
+		#endif
+		while (1)
 		{
-			splash(splashImage);
+			waitframe();
 		}
-		
-		if(!i)i=1;					//Stop PocketNES from crashing if there are no ROMs
-		roms=i;
+	}
+	if (splashImage != NULL)
+	{
+		splash(splashImage);
 	}
 #else
 	roms = 1;
@@ -269,15 +280,18 @@ APPEND void C_entry()
 //	REG_WIN0H=0xFF;
 //	REG_WIN0V=0xFF;
 	
-	//load VRAM CODE
-	extern u8 __vram1_start[], __vram1_lma[], __vram1_end[];
-	int vram1_size = ((((u8*)__vram1_end - (u8*)__vram1_start) - 1) | 3) + 1;
-	memcpy32((u32*)__vram1_start,(const u32*)__vram1_lma,vram1_size);
-	
+	//Must Load VRAM code before installing interrupt handlers
+	load_vram_code();
 	spriteinit();
 	stop_dma_interrupts();
 	
+	irqSet(IRQ_VCOUNT,vcountinterrupt);
+	irqSet(IRQ_HBLANK,hblankinterrupt);
 	irqSet(IRQ_VBLANK,vblankinterrupt);
+	irqSet(IRQ_TIMER1,timer1interrupt);
+	irqSet(IRQ_TIMER2,timer_2_interrupt);
+	irqSet(IRQ_TIMER3,timer_3_interrupt);
+	irqSet(IRQ_SERIAL,serialinterrupt);  //this handler is not actually in vram, but call it here anyway	
 	
 	#if COMPY
 		build_byte_reverse_table();

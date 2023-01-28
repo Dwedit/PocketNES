@@ -162,6 +162,11 @@ void get_rom_map()
 		if (banks[0]==255)
 		{
 			//it's sram
+			
+			//suppress GCC warnings about subtracting from a pointer
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Warray-bounds"
+			
 			#if PRG_BANK_SIZE == 8
 			*((u8**)&readmem_6)=(u8*)sram_R;
 			*((u8**)&writemem_6)=(u8*)sram_W_func;
@@ -175,6 +180,8 @@ void get_rom_map()
 			*((u8**)&memmap_6)=(u8*)(NES_RAM-0x5800);
 			*((u8**)&memmap_7)=(u8*)(NES_RAM-0x5800);
 			#endif
+			//restore GCC warnings
+			#pragma GCC diagnostic pop
 		}
 		else
 		{
