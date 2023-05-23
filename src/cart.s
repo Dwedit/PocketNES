@@ -156,6 +156,7 @@ mappertbl:
 	.byte 24
 	.byte 25
 	.byte 26
+	.byte 30
 	.byte 32
 	.byte 33
 	.byte 34
@@ -246,6 +247,7 @@ mappertbl2:
 	.word mapper24init	@24
 	.word mapper25init	@25
 	.word mapper26init	@26
+	.word mapper30init	@30
 	.word mapper32init	@32
 	.word mapper33init	@33
 	.word mapper34init	@34
