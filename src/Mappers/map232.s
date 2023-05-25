@@ -13,8 +13,6 @@ mapper232init:
 
 	mov r0,#0x18
 	strb_ r0,mapbyte1
-
-@	b_long mirror1_
 	mov pc,lr
 @-------------------------------------------------------
 w9000:

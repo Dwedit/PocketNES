@@ -30,6 +30,7 @@
 	.global _rompages
 	.global _vrompages
 	.global _fourscreen
+	.global _singlescreen
 	.global _nes_chr_map
 	global_func loadcart_asm
 	global_func hardreset
@@ -156,6 +157,7 @@ mappertbl:
 	.byte 24
 	.byte 25
 	.byte 26
+	.byte 30
 	.byte 32
 	.byte 33
 	.byte 34
@@ -206,6 +208,7 @@ mappertbl:
 	.byte 184
 	.byte 187
 	.byte 206
+	.byte 218
 	.if LESSMAPPERS
 	.else
 	.byte 228
@@ -246,6 +249,7 @@ mappertbl2:
 	.word mapper24init	@24
 	.word mapper25init	@25
 	.word mapper26init	@26
+	.word mapper30init	@30
 	.word mapper32init	@32
 	.word mapper33init	@33
 	.word mapper34init	@34
@@ -295,7 +299,8 @@ mappertbl2:
 	.word mapper180init	@180
 	.word mapper184init	@184
 	.word mapper4init 	@187
-	.word mapper206init @206
+	.word mapper206init	@206
+	.word mapper0init	@218
 	.if LESSMAPPERS
 	.else
 	.word mapper228init	@228
@@ -474,9 +479,18 @@ lc1:				@call mapper*init
 	adr_ m6502_mmap,memmap_tbl @r4 gets clobbered, reset it here
 	mov pc,r0			@Jump to MapperInit
 0:
+	@assign single screen mirroring at boot time if requested
+	ldrb_ r1,singlescreen
+	movs r1,r1
+	beq 0f
+	movs r0,#0
+	bl_long mirror1_
+	b 1f
+0:
 	ldrb_ r1,cartflags
 	tst r1,#MIRROR		@set default mirror
 	bl_long mirror2H_		@(call after mapperinit to allow mappers to set up cartflags first)
+1:
 
 	bl CPU_reset		@reset everything else - Call AFTER mapperinit
 	
@@ -681,9 +695,10 @@ mirror2H_:
 mirror4_:
 	ldr r0,=m0123
 mirrorchange:
-	ldrb_ r1,cartflags
-	tst r1,#SCREEN4+VS
-	ldrne r0,=m0123		@force 4way mirror for SCREEN4 or VS flags
+	ldrb_ r1,fourscreen
+	movs r1,r1
+	ldrne r0,=m0123		@When "fourscreen" variable is set, ignore requested mirror change and use four screen instead
+	@TODO: NEED TO FIX FOR MMC5
 
 	stmfd sp!,{r0,r3-r5,lr}
 
@@ -1941,7 +1956,8 @@ _vrompages:
 	.byte 0 @vrompages
 _fourscreen:
 	.byte 0 @fourscreen
-	.byte 0
+_singlescreen:
+	.byte 0 @singlescreen
 
 	.word 0 @chrold
 

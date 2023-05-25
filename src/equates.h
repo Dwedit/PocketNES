@@ -613,7 +613,7 @@ DISPCNTBUFF1	= 0
  _m_ rompages,1
  _m_ vrompages,1
  _m_ fourscreen,1
- _m_ ,1
+ _m_ singlescreen,1
 
  _m_ chrold,4
 

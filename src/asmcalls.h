@@ -83,6 +83,7 @@ extern u8 dirty_tiles[512];
 extern u8 _bg_cache_full;
 
 extern u8 _fourscreen;
+extern u8 _singlescreen;
 
 //6502.s
 void CPU_reset(void);
@@ -592,6 +593,7 @@ extern volatile u8 _crash_disabled;
 #define vram_page_base	_vram_page_base
 #define bg_cache_full	_bg_cache_full
 #define fourscreen	_fourscreen
+#define singlescreen	_singlescreen
 #define instant_prg_banks	_instant_prg_banks
 #define instant_chr_banks	_instant_chr_banks
 #define bank6	_bank6

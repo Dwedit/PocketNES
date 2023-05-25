@@ -48,8 +48,40 @@ APPEND static void read_rom_header(u8 *nesheader)
 			cartflags&=~SRAM_;
 		}
 		fourscreen=(cartflags & 0x18)!=0;
-		if (mapper==5) fourscreen=true;
+		if (mapper==7)
+		{
+			singlescreen = true;
+			fourscreen = false;
+		}
+		if (mapper==78)
+		{
+			if (!fourscreen)
+			{
+				singlescreen = true;
+			}
+			fourscreen = false;
+		}
+		if (mapper==70 && fourscreen)
+		{
+			singlescreen = true;
+			fourscreen = false;
+		}
+		if (mapper == 152)
+		{
+			singlescreen = true;
+			fourscreen = false;
+		}
 		if (mapper==9) fourscreen=false;
+		if (mapper==30 && !(cartflags & 1))
+		{
+			singlescreen = true;
+			fourscreen=false;
+		}
+		if (mapper==218 && fourscreen)
+		{
+			fourscreen=false;
+			singlescreen=true;
+		}
 		if (mapper==99) cartflags|=VS;
 	}
 
