@@ -59,7 +59,7 @@ void swap_column(int col)
 		u16 from_vram=SCREENBASE[row*32+col];
 		u8 from_textmem=TEXTMEM[row][col];
 		u16 to_vram=(lookup_character(from_textmem & 0x7F) + FONT_PALETTE_NUMBER * 0x1000 + (from_textmem >> 7) * 0x1000);
-		u8 to_textmem=( lookup_character_inverse(from_vram) + (from_vram & 0x1000) / 32);
+		u8 to_textmem=( lookup_character_inverse(from_vram) + ((from_vram - FONT_PALETTE_NUMBER * 0x1000) & 0x1000) / 32);
 		TEXTMEM[row][col]=to_textmem;
 		SCREENBASE[row*32+col]=to_vram;
 	}
@@ -113,7 +113,7 @@ void get_ready_to_display_text()
 	setdarknessgs(0);
 	REG_DISPCNT&=~(7 | FORCE_BLANK); //force mode 0, and turn off force blank
 	REG_DISPCNT|=BG2_EN; //text on BG2
-	REG_BG2CNT= 0 | (0 << 2) | (UI_TILEMAP_NUMBER << 8) | (0<<14);
+	REG_BG2CNT= 0 | (FONT_CHAR_PAGE << 2) | (UI_TILEMAP_NUMBER << 8) | (0<<14);
 }
 
 void clearoldkey()
@@ -165,7 +165,7 @@ void cls(int chrmap)
 	
 	const u32 FILL_PATTERN = (FONT_MEM_FIRSTCHAR + FONT_PALETTE_NUMBER*0x1000)*0x10001;
 	
-	if ( (chrmap & 8) || ((chrmap & 1) && ui_x < 256) || ((chrmap & 2) &&  ui_x >= 256) )
+	if ( (chrmap & 8) || ((chrmap & 1) && !(ui_x & 256)) || ((chrmap & 2) && (ui_x & 256)) )
 	{
 		len=0x540/4;
 		for(;i<len;i++)				//512x256
@@ -173,7 +173,7 @@ void cls(int chrmap)
 			scr[i]=FILL_PATTERN;
 		}
 	}
-	if ( (chrmap & 4) || ((chrmap & 1) && ui_x >= 256) || ((chrmap & 2) && ui_x < 256) )
+	if ( (chrmap & 4) || ((chrmap & 1) && (ui_x & 256)) || ((chrmap & 2) && !(ui_x & 256)) )
 	{
 		u32 spaces = ' ' | (' ' << 8) | (' ' << 16) | (' ' << 24);
 		memset32(TEXTMEM,spaces,sizeof(TEXTMEM));
@@ -184,7 +184,7 @@ void cls(int chrmap)
 
 void drawtext(int row,const char *str,int hilite)
 {
-	if ((row >= 32 && ui_x>=256) || (row <32 && ui_x<256))
+	if ((row >= 32 && (ui_x & 256)) || (row <32 && !(ui_x&256)))
 	{
 		vu16 *here=SCREENBASE+(row&0x1F)*32;
 		int i=0;
