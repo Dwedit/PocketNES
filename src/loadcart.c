@@ -903,7 +903,7 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 		DEFERRED_CALL(memmove32,compdest, compsrc, filesize);
 		cache_end_of_rom=192*1024+cachebase;
 	}
-	else if (ROMMENU && comptype == 0 && compsrc>=(u8*)0x08000000)
+	else if (comptype == 0 && compsrc>=(u8*)0x08000000)
 	{
 		compdest = nes_header + 16;
 	}
@@ -1243,7 +1243,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 		memmove32(compdest, compsrc, filesize);
 		cache_end_of_rom=192*1024+cachebase;
 	}
-	else if (ROMMENU && comptype == 0 && compsrc>=(u8*)0x08000000)
+	else if (comptype == 0 && compsrc>=(u8*)0x08000000)
 	{
 		compdest = nes_header + 16;
 	}

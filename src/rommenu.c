@@ -251,6 +251,7 @@ int getinput() {
 #else
 void rommenu()
 {
+	cls(3);
 	loadcart(0,emuflags&0x304,1);
 }
 void rommenu_frame(){}
