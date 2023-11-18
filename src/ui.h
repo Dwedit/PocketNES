@@ -78,7 +78,7 @@ void strmerge(char *dst,const char *src1,const char *src2);
 void strmerge3(char *dst,const char *src1,const char *src2, const char *src3);
 void strmerge4(char *dst,const char *src1,const char *src2, const char *src3, const char *src4);
 
-#if CHEATFINDER | EDITFOLLOW
+#if CHEATFINDER | EDITFOLLOW | CRASH
 char *hexn(unsigned int n, int digits);
 static __inline char *hex4(u32 n) {	return hexn(n,4); }
 static __inline char *hex2(u32 n) {	return hexn(n,2); }

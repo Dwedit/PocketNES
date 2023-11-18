@@ -513,7 +513,7 @@ void strmerge4(char *dst,const char *src1,const char *src2, const char *src3, co
 	strcat_(dst,src4);
 }
 
-#if CHEATFINDER | EDITFOLLOW
+#if CHEATFINDER | EDITFOLLOW | CRASH
 char *hexn(unsigned int n, int digits)
 {
 	int i;
@@ -915,7 +915,7 @@ char *number_at(char *dest, unsigned int n)
 }
 #endif
 
-#if BRANCHHACKDETAIL | CHEATFINDER
+#if BRANCHHACKDETAIL | CHEATFINDER | SAVE
 
 
 char *number(unsigned short n)
