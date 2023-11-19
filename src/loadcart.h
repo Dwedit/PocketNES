@@ -25,8 +25,8 @@ void redecompress(void);
 //static int get_prg_bank_size(int mapper);
 void loadcart(int rom_number, int emu_flags, int loading_state);
 void init_cache(u8* nes_header, int do_reset);
-void stop_dma_interrupts(void);
-void resume_interrupts(void);
+void suspend_hdma(void);
+void resume_hdma(void);
 void swapmem (u32* A, u32*B, u32 Asize);
 void simpleswap (void* a_in, void* b_in, u32 size);
 

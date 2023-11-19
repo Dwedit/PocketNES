@@ -499,7 +499,7 @@ APPEND static u8* allocate_end_variables(int do_reset)
 	//setup buffers
 	if (do_reset==1)
 	{
-		stop_dma_interrupts();
+		suspend_hdma();
 		if (!fourscreen)
 		{
 			//place scanline buffers into ram otherwise occupied by other 2 nametables
@@ -863,7 +863,7 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 	if (compsrc<(u8*)0x08000000)
 	{
 		u8* compcopy;
-		stop_dma_interrupts();
+		suspend_hdma();
 		
 		//needresume=true;
 		
@@ -1215,7 +1215,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 	if (compsrc<(u8*)0x08000000)
 	{
 		u8* compcopy;
-		stop_dma_interrupts();
+		suspend_hdma();
 		
 #if COMPY
 	{
@@ -1470,7 +1470,7 @@ APPEND static void init_cache_deferred(u8* nes_header)
 	
 	if (do_reset!=0)
 	{
-		stop_dma_interrupts();
+		suspend_hdma();
 	}
 	
 	
@@ -1586,7 +1586,7 @@ APPEND static void init_cache_deferred(u8* nes_header)
 	}
 	
 	//resume interrupt system
-	DEFERRED_CALL(resume_interrupts,0,0,0);
+	DEFERRED_CALL(resume_hdma,0,0,0);
 }
 
 #else
@@ -1663,7 +1663,7 @@ void init_cache(u8* nes_header, int do_reset)
 
 	if (do_reset!=0)
 	{
-		stop_dma_interrupts();
+		suspend_hdma();
 		#if !COMPY
 		init_cache_clear_vram();
 		#endif
@@ -1917,7 +1917,7 @@ void init_cache(u8* nes_header, int do_reset)
 			if (compsrc<(u8*)0x08000000)
 			{
 				u8* compcopy;
-				stop_dma_interrupts();
+				suspend_hdma();
 				//needresume=true;
 				
 				compcopy = mem_end - filesize;
@@ -2237,8 +2237,8 @@ void init_cache(u8* nes_header, int do_reset)
 		reset_buffers();
 	}
 	
-	//resume interrupt system
-	resume_interrupts();
+	//resume hdma system
+	resume_hdma();
 
 }
 
@@ -2276,24 +2276,28 @@ void setup_cheatfinder(u8 *cache_end_of_rom, int mode)
 }
 #endif
 
-void stop_dma_interrupts()
+void suspend_hdma()
 {
-	okay_to_run_hdma = 0;
+	//This function is used to suspend the HDMA system (per-scanline values for scrolling, DISPCNT, BG0CNT)
+	//Call this when you need the DMA buffer memory for something else, or you are moving the DMA buffer memory around.
+	//During ROM decompression, you need all the memory you can get.
+	
+	okay_to_run_hdma = 0;	//code in "vblankinterrupt" will read this and decide not to start a new HDMA transfer
+	
 	//stop all DMAs
 	REG_DM0CNT_H=0;
 	REG_DM1CNT_H=0;
 	REG_DM3CNT_H=0;
-	//REG_IME=0;
 	
-	REG_DISPCNT&=~0x0100; //disable BG 0
-	REG_DISPCNT&=~(7 | FORCE_BLANK); //force mode 0, and turn off force blank
-	REG_DISPCNT|=BG2_EN; //text on BG2
-
+	//Ensure that DISPCNT has a valid value
+	
+	//Disable BG 0, Enable BG 2  (text layer)
+	REG_DISPCNT = ((REG_DISPCNT) & ~BG0_EN) | BG2_EN;
 }
-void resume_interrupts()
+
+void resume_hdma()
 {
 	okay_to_run_hdma = 1;
-	//REG_IME=1;
 }
 
 typedef union

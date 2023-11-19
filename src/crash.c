@@ -58,7 +58,7 @@ void crash(u32 *stackpointer, u32 *irqstackpointer)
 	setdarknessgs(7);
 	
 	REG_IME = 0;
-	stop_dma_interrupts();
+	suspend_hdma();
 	get_ready_to_display_text();
 	REG_DISPCNT = 0x0400;
 	

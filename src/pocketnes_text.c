@@ -111,8 +111,9 @@ APPEND void loadfontpal()
 void get_ready_to_display_text()
 {
 	setdarknessgs(0);
-	REG_DISPCNT&=~(7 | FORCE_BLANK); //force mode 0, and turn off force blank
-	REG_DISPCNT|=BG2_EN; //text on BG2
+	//Force mode 0, turn off Force Blank, enable BG2 (text layer)
+	REG_DISPCNT = (REG_DISPCNT & ~(7 | FORCE_BLANK)) | BG2_EN;
+	//Set character page, tilemap number, screen size (0)
 	REG_BG2CNT= 0 | (FONT_CHAR_PAGE << 2) | (UI_TILEMAP_NUMBER << 8) | (0<<14);
 }
 
