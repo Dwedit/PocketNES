@@ -197,15 +197,15 @@ APPEND void C_entry()
 #endif
 	end_of_exram = (u8*)&END_OF_EXRAM;
 	
-	okay_to_run_hdma = 0;
-	//Set interrupt handlers to dummy function, and set IRQ vector
-	irqInit();
-	//key,vblank,timer1,timer2,timer3,serial interrupt enable
-	irqEnable(IRQ_KEYPAD | IRQ_VBLANK | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_TIMER3 | IRQ_SERIAL);
-	//Disable vcount and hblank interrupts in DISPSTAT, but enable them in REG_IE
-	REG_DISPSTAT &= ~(LCDC_HBL | LCDC_VCNT);
-	REG_IE |= IRQ_VCOUNT | IRQ_HBLANK;
-	//Warning: VRAM code must be loaded before interrupt handlers are installed, so we install them happens after we load the VRAM overlay.
+	//Allow use of entire VRAM for any graphical menus, effects, etc.
+	//Also initializes interrupts so can use waitframe, but does not install the interrupt handlers yet.
+	//VRAM code is not loaded.
+	release_vram(false);
+	
+	if (roms == 0)
+	{
+		wantToSplash = false;
+	}
 	
 	if (!wantToSplash)
 	{
@@ -213,25 +213,9 @@ APPEND void C_entry()
 	}
 	//Now that we have finished calling `pocketnes_fade_from_white`, we no longer need to preserve any video registers or video memory.
 	
-	#if !COMPY
-	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
-	#endif
-	//Warning: VRAM code must be loaded at some point
-	
-	//load font+palette
-	loadfont();
-	loadfontpal();
-	ui_x=0x100;
-#if ROMMENU
-	move_ui();
-#endif
-//	REG_BG2HOFS=0x0100;		//Screen left
-	get_ready_to_display_text();
-	
 	extern void init_speed_hacks();
 	init_speed_hacks();
 	
-	//PPU_init();
 	build_chr_decode();
 	#if CRASH
 	crash_disabled = 1;
@@ -241,8 +225,7 @@ APPEND void C_entry()
 	if (roms == 0)
 	{
 		#if !COMPY
-		get_ready_to_display_text();
-		cls(3);
+		take_ownership_of_vram(true);
 		ui_x=0;
 		move_ui();
 		drawtext(0,"No ROMS found!",0);
@@ -258,33 +241,14 @@ APPEND void C_entry()
 	}
 	if (splashImage != NULL)
 	{
+		release_vram(true);
 		splash(splashImage);
-		memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
-		get_ready_to_display_text();
-		loadfont();
-		ui_x=0;
-		move_ui();
 	}
 #else
 	roms = 1;
 #endif
-//	REG_WININ=0xFFFF;
-//	REG_WINOUT=0xFFFB;
-//	REG_WIN0H=0xFF;
-//	REG_WIN0V=0xFF;
-	
-	//Must Load VRAM code before installing interrupt handlers
-	load_vram_code();
-	spriteinit();
-	suspend_hdma();
-	
-	irqSet(IRQ_VCOUNT,vcountinterrupt);
-	irqSet(IRQ_HBLANK,hblankinterrupt);
-	irqSet(IRQ_VBLANK,vblankinterrupt);
-	irqSet(IRQ_TIMER1,timer1interrupt);
-	irqSet(IRQ_TIMER2,timer_2_interrupt);
-	irqSet(IRQ_TIMER3,timer_3_interrupt);
-	irqSet(IRQ_SERIAL,serialinterrupt);  //this handler is not actually in vram, but call it here anyway	
+	//Load VRAM code, install interrupt handlers, clear other VRAM, make text ready to display, etc...
+	take_ownership_of_vram(true);
 	
 	#if COMPY
 		build_byte_reverse_table();
@@ -294,14 +258,81 @@ APPEND void C_entry()
 		lzo_init();	//init compression lib for savestates
 	#endif
 	
-//	LZ77UnCompVram(&font,(u16*)0x6002400);
-//	memcpy((void*)0x5000080,&fontpal,64);
-	
-	
 	#if SAVE
 		readconfig();
 	#endif
 	jump_to_rommenu();
+}
+
+#define BIOS_IF *(vu32*)0x3007FF8
+
+//Allows a splash screen or alternative menu to use all of VRAM
+APPEND void release_vram(bool clear)
+{
+	suspend_hdma();
+	//Set interrupt handlers to dummy function, and set IRQ vector
+	irqInit();
+	//key,vblank,timer1,timer2,timer3,serial interrupt enable
+	irqEnable(IRQ_KEYPAD | IRQ_VBLANK | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_TIMER3 | IRQ_SERIAL);
+	//Disable vcount and hblank interrupts in DISPSTAT, but enable them in REG_IE
+	REG_DISPSTAT = LCDC_VBL;
+	REG_IE |= IRQ_VCOUNT | IRQ_HBLANK;
+	//Warning: VRAM code must be loaded before interrupt handlers are installed, so we install them happens after we load the VRAM overlay.
+	if (clear)
+	{
+		//clearing VRAM is disabled for COMPY builds because we're holding ROM data in there
+		#if !COMPY
+		memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
+		#endif
+		memset32((u32*)MEM_PALETTE, 0, 0x400);  //clear palette
+	}
+}
+
+//Gives the normal pocketnes engine use of VRAM (code in VRAM, font, palettes, text ready to display, etc)
+APPEND void take_ownership_of_vram(bool clear)
+{
+	okay_to_run_hdma = 0;
+	//Set interrupt handlers to dummy function, and set IRQ vector  (we override these later)
+	irqInit();
+	//key,vblank,timer1,timer2,timer3,serial interrupt enable
+	irqEnable(IRQ_KEYPAD | IRQ_VBLANK | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_TIMER3 | IRQ_SERIAL);
+	//Disable vcount and hblank interrupts in DISPSTAT, but enable them in REG_IE
+	REG_DISPSTAT = LCDC_VBL;
+	REG_IE |= IRQ_VCOUNT | IRQ_HBLANK;
+
+	if (clear)
+	{
+		//clearing VRAM is disabled for COMPY builds because we're holding ROM data in there
+		#if !COMPY
+		memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
+		#endif
+		memset32((u32*)MEM_PALETTE, 0, 0x400);  //clear palette
+	}
+	loadfont();
+	loadfontpal();
+	ui_x = 0x100;
+	//#if ROMMENU
+	move_ui();
+	cls(3);
+	get_ready_to_display_text();
+	//#endif
+	ui_x = 0;
+	#if ROMMENU
+	move_ui();
+	#endif
+	
+	//Must Load VRAM code before installing interrupt handlers
+	load_vram_code();
+	spriteinit();	//builds sprite lookup table (for vblank handler to use)
+	suspend_hdma();
+	
+	irqSet(IRQ_VCOUNT,vcountinterrupt);
+	irqSet(IRQ_HBLANK,hblankinterrupt);
+	irqSet(IRQ_VBLANK,vblankinterrupt);
+	irqSet(IRQ_TIMER1,timer1interrupt);
+	irqSet(IRQ_TIMER2,timer_2_interrupt);
+	irqSet(IRQ_TIMER3,timer_3_interrupt);
+	irqSet(IRQ_SERIAL,serialinterrupt);  //this handler is not actually in vram, but call it here anyway	
 }
 
 void jump_to_rommenu()
@@ -322,8 +353,8 @@ void jump_to_rommenu()
 APPEND void pocketnes_fade_from_white()
 {
 	//Do the fade before anything else so we can fade to black from Pogoshell's screen.  Doesn't work in newest pogoshell anymore.
-	if(REG_DISPCNT==FORCE_BLANK)	//is screen OFF?
-		REG_DISPCNT=0;				//screen ON
+	if(REG_DISPCNT & FORCE_BLANK)	//is screen OFF?
+		REG_DISPCNT &= ~FORCE_BLANK;	//screen ON
 	*MEM_PALETTE=0x7FFF;			//white background
 	REG_BLDCNT=0x00ff;				//brightness decrease all
 	for(int i=0;i<17;i++) {
@@ -334,49 +365,69 @@ APPEND void pocketnes_fade_from_white()
 	REG_DISPCNT=0;					//screen ON, MODE0
 }
 
+//exclude Splash Screen stuff from COMPY builds
+#if !COMPY
+
+//To allow pressing a key to end the splash screen
+APPEND bool SplashHitKey(u16 *pInput, u16 *pLastInput)
+{
+	*pLastInput = *pInput;
+	*pInput = ~REG_P1;
+	u16 keysHit = (*pInput ^ *pLastInput) & *pInput;
+	return keysHit & (A_BTN | B_BTN | START | SELECT | L_BTN | R_BTN);
+}
+
 //show splash screen
 APPEND void splash(const u16 *image)
 {
 	int i;
-	u32 lastJoypad;
-	u32 currentJoypad;
-	u32 keysHit;
-
+	bool skip = false;
+	u16 input = ~REG_P1;
+	u16 lastInput = input;
+	u16 keysHit = 0;
+	
 	REG_DISPCNT=FORCE_BLANK;	//screen OFF
 	*MEM_PALETTE=0x7FFF;			//white background
 	memcpy32((u32*)MEM_VRAM,(const u32*)image,240*160*2);
 	waitframe();
 //	REG_BG2CNT=0x0000;
 	REG_DISPCNT=BG2_EN|MODE3;
-	for(i=16;i>=0;i--) {	//fade from white
+	for(i=16;i>0;i--) {	//fade from white
 		setbrightnessall(i);
 		waitframe();
+		if (SplashHitKey(&input, &lastInput)) skip = true;
+		if (skip) break;
 	}
-	currentJoypad = REG_P1;
+	setbrightnessall(0);
 	for(i=0;i<150;i++) {	//wait 2.5 seconds
 		waitframe();
-		lastJoypad = currentJoypad;
-		currentJoypad = REG_P1;
-		if (currentJoypad==0x030f)
+		if (SplashHitKey(&input, &lastInput)) skip = true;
+		if (((~input) & 0xFFFF) == 0x030f)
 		{
 			gameboyplayer=1;
 			gbaversion=3;
 		}
-		else
-		{
-			keysHit = (~currentJoypad) & (lastJoypad ^ currentJoypad);
-			if (keysHit & 0x30F)
-			{
-				i = 150;
-			}
-		}
-
+		if (skip) break;
 	}
+	skip = false;
+	//fade to black
+	for(i=0;i<16;i++)
+	{
+		REG_BLDCNT = 0xFF | (3 << 6); //brightness decrease, blend all sprites and BG0
+		REG_BLDY = i;
+		waitframe();
+		if (SplashHitKey(&input, &lastInput)) skip = true;
+		if (skip) break;
+	}
+	REG_BLDCNT = 0xFF | (3 << 6); //brightness decrease, blend all sprites and BG0
+	REG_BLDY = 15;
 }
+#endif
 
 #if COMPY
 APPEND void build_byte_reverse_table()
 {
+	//doesn't actually build it, it just moves a pre-created one to overwrite the GBA multiboot header (reclaiming that memory)
 	extern const u8 byte_reverse_table_init[256];
 	extern u8 byte_reverse_table[256];
 

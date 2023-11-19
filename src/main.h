@@ -24,7 +24,7 @@ extern const int ne;
 #define PALTIMING 4
 
 void C_entry(void);
-void load_vram_code();
+void load_vram_code(void);
 void splash(const u16* splashimage);
 void jump_to_rommenu(void) NORETURN;
 void rommenu(void);
@@ -35,6 +35,9 @@ void cls(int chrmap);
 //void drawtext(int row,char *str,int hilite);
 void setdarknessgs(int dark);
 void setbrightnessall(int light);
+void release_vram(bool clear);
+void take_ownership_of_vram(bool clear);
+
 
 #ifdef __cplusplus
 }

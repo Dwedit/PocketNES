@@ -2299,7 +2299,7 @@ void suspend_hdma()
 
 void resume_hdma()
 {
-	okay_to_run_hdma = 1;
+	okay_to_run_hdma = 1;	//code in "vblankinterrupt" will read this and decide to perform HDMA transfers
 }
 
 typedef union

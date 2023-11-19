@@ -19,13 +19,17 @@ typedef enum
 
 //"romnumber" = loaded rom, "selectedrom" = rom selected at menu
 
-void rommenu(void) {
+void rommenu(void)
+{
+	//The rom menu runs in a background thread, so input stays responsive while a game is being decompressed.
+	//This code is the main thread.  It handles:
+	//  requests for the game to change
+	//  loading a different game
+	//  running the game for one frame (while the game isn't changing)
+	//  exiting out of the rom menu once we've confirmed the game
+	
 	cls(3);
-	//redundant, but let's include these two lines anyway
-	//ui_x=0x0100;		//Screen left
-	//move_ui();
-//	REG_WIN0H=0xFF00;
-	REG_BG2CNT=0x0400;	//16color 512x256 CHRbase0 SCRbase6 Priority0
+	//rommenu_frame (background code) handles the position of the UI for the rom menu
 	setdarknessgs(16);
 	#if SAVE
 		backup_nes_sram(1);
@@ -38,20 +42,18 @@ void rommenu(void) {
 	if(pogoshell || roms <= 1)
 	{
 		loadcart(0,emuflags&0x304,1);		//Also save country
-//		#if SAVE
-//			get_saved_sram();
-//		#endif
+		//SRAM loading happens inside of loadcart
 	}
 	else
 	{
 		ui_x = 256;
-		rommenu_state = DISABLED;
+		rommenu_state = DISABLED;  //makes the rom menu do nothing until we've set its state to appearing
 		move_ui();
 		int sel = selectedrom;
 		int opt = drawmenu(sel);
 		selected_rom_options = opt;
 		setdarknessgs(8);
-		rommenu_state = APPEARING;
+		rommenu_state = APPEARING;  //makes the rom menu ready to go, scrolling on from the right
 		loadcart(sel,opt|(emuflags&0x300),1);
 		do
 		{
@@ -72,10 +74,8 @@ void rommenu(void) {
 	move_ui();
 	setdarknessgs(0);
 	rommenu_state = DISABLED;
-//#if SAVE
-//	if(autostate&1)quickload();
-//#endif
-	//run(1); //removed, jump_to_rommenu calls this instead
+	//TODO: add back in Auto-Load state feature
+	//returning from "rommenu" will call run(1) and start the game, giving an empty stack for the emulator
 }
 
 void rommenu_frame(void)
