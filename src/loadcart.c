@@ -2276,7 +2276,14 @@ void setup_cheatfinder(u8 *cache_end_of_rom, int mode)
 }
 #endif
 
-void suspend_hdma(bool doBlankScreen)
+void suspend_hdma_and_hide_bg0()
+{
+	suspend_hdma();
+	//Disable BG 0, Enable BG 2  (text layer)
+	REG_DISPCNT = ((REG_DISPCNT) & ~BG0_EN) | BG2_EN;
+}
+
+void suspend_hdma()
 {
 	//This function is used to suspend the HDMA system (per-scanline values for scrolling, DISPCNT, BG0CNT)
 	//Call this when you need the DMA buffer memory for something else, or you are moving the DMA buffer memory around.
@@ -2287,15 +2294,7 @@ void suspend_hdma(bool doBlankScreen)
 	//stop all DMAs
 	REG_DM0CNT_H=0;
 	REG_DM1CNT_H=0;
-	REG_DM3CNT_H=0;
-	
-	//Ensure that DISPCNT has a valid value
-	
-	if (doBlankScreen)
-	{
-		//Disable BG 0, Enable BG 2  (text layer)
-		REG_DISPCNT = ((REG_DISPCNT) & ~BG0_EN) | BG2_EN;
-	}
+	REG_DM3CNT_H=0;	
 }
 
 void resume_hdma()

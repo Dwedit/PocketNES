@@ -276,7 +276,7 @@ APPEND void C_entry()
 	//Must Load VRAM code before installing interrupt handlers
 	load_vram_code();
 	spriteinit();
-	suspend_hdma_and_hide_bg0();
+	suspend_hdma();
 	
 	irqSet(IRQ_VCOUNT,vcountinterrupt);
 	irqSet(IRQ_HBLANK,hblankinterrupt);
