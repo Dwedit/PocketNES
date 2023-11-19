@@ -14,7 +14,9 @@ void LZ77UnCompVram(const void *source, vu16 *dest);
 
 
 #define _const __attribute__ ((const))
+//Functions marked with "APPEND" are thrown out of memory in COMPY while a ROM is being loaded.  Don't call them after they've been thrown out of memory.
 #define APPEND __attribute__((section(".append")))
+//Likewise for "APPEND_DATA", but it's read-only data rather than code (compressed font, font palette, etc)
 #define APPEND_DATA __attribute__((section(".append_data")))
 
 /*

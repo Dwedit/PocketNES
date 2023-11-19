@@ -211,6 +211,7 @@ APPEND void C_entry()
 	{
 		pocketnes_fade_from_white();
 	}
+	//Now that we have finished calling `pocketnes_fade_from_white`, we no longer need to preserve any video registers or video memory.
 	
 	#if !COMPY
 	memset32((u32*)0x6000000,0,0x18000);  //clear vram (fixes graphics junk)
@@ -225,7 +226,7 @@ APPEND void C_entry()
 	move_ui();
 #endif
 //	REG_BG2HOFS=0x0100;		//Screen left
-	REG_BG2CNT=0x0400;	//16color 512x256 CHRbase0 SCRbase6 Priority0
+	get_ready_to_display_text();
 	
 	extern void init_speed_hacks();
 	init_speed_hacks();
@@ -275,7 +276,7 @@ APPEND void C_entry()
 	//Must Load VRAM code before installing interrupt handlers
 	load_vram_code();
 	spriteinit();
-	suspend_hdma();
+	suspend_hdma_and_hide_bg0();
 	
 	irqSet(IRQ_VCOUNT,vcountinterrupt);
 	irqSet(IRQ_HBLANK,hblankinterrupt);
@@ -318,7 +319,7 @@ void jump_to_rommenu()
 	while (true);
 }
 
-void pocketnes_fade_from_white()
+APPEND void pocketnes_fade_from_white()
 {
 	//Do the fade before anything else so we can fade to black from Pogoshell's screen.  Doesn't work in newest pogoshell anymore.
 	if(REG_DISPCNT==FORCE_BLANK)	//is screen OFF?

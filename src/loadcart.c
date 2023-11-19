@@ -499,7 +499,7 @@ APPEND static u8* allocate_end_variables(int do_reset)
 	//setup buffers
 	if (do_reset==1)
 	{
-		suspend_hdma();
+		suspend_hdma_and_hide_bg0();
 		if (!fourscreen)
 		{
 			//place scanline buffers into ram otherwise occupied by other 2 nametables
@@ -863,7 +863,7 @@ APPEND static u8* deferred_decompress_rom(u8 *nes_header, u8 *cachebase, int pag
 	if (compsrc<(u8*)0x08000000)
 	{
 		u8* compcopy;
-		suspend_hdma();
+		suspend_hdma_and_hide_bg0();
 		
 		//needresume=true;
 		
@@ -1215,7 +1215,7 @@ static u8* decompress_rom(u8 *nes_header, u8 *cachebase, int page_size, int comp
 	if (compsrc<(u8*)0x08000000)
 	{
 		u8* compcopy;
-		suspend_hdma();
+		suspend_hdma_and_hide_bg0();
 		
 #if COMPY
 	{
@@ -1470,7 +1470,7 @@ APPEND static void init_cache_deferred(u8* nes_header)
 	
 	if (do_reset!=0)
 	{
-		suspend_hdma();
+		suspend_hdma_and_hide_bg0();
 	}
 	
 	
@@ -1663,7 +1663,7 @@ void init_cache(u8* nes_header, int do_reset)
 
 	if (do_reset!=0)
 	{
-		suspend_hdma();
+		suspend_hdma_and_hide_bg0();
 		#if !COMPY
 		init_cache_clear_vram();
 		#endif
@@ -1917,7 +1917,7 @@ void init_cache(u8* nes_header, int do_reset)
 			if (compsrc<(u8*)0x08000000)
 			{
 				u8* compcopy;
-				suspend_hdma();
+				suspend_hdma_and_hide_bg0();
 				//needresume=true;
 				
 				compcopy = mem_end - filesize;
@@ -2276,7 +2276,7 @@ void setup_cheatfinder(u8 *cache_end_of_rom, int mode)
 }
 #endif
 
-void suspend_hdma()
+void suspend_hdma(bool doBlankScreen)
 {
 	//This function is used to suspend the HDMA system (per-scanline values for scrolling, DISPCNT, BG0CNT)
 	//Call this when you need the DMA buffer memory for something else, or you are moving the DMA buffer memory around.
@@ -2291,8 +2291,11 @@ void suspend_hdma()
 	
 	//Ensure that DISPCNT has a valid value
 	
-	//Disable BG 0, Enable BG 2  (text layer)
-	REG_DISPCNT = ((REG_DISPCNT) & ~BG0_EN) | BG2_EN;
+	if (doBlankScreen)
+	{
+		//Disable BG 0, Enable BG 2  (text layer)
+		REG_DISPCNT = ((REG_DISPCNT) & ~BG0_EN) | BG2_EN;
+	}
 }
 
 void resume_hdma()

@@ -58,8 +58,9 @@ void crash(u32 *stackpointer, u32 *irqstackpointer)
 	setdarknessgs(7);
 	
 	REG_IME = 0;
-	suspend_hdma();
+	suspend_hdma_and_hide_bg0();
 	get_ready_to_display_text();
+	//layer BG2 is already turned on by calling `get_ready_to_display_text`, but this ensures that no other layers are turned on as well
 	REG_DISPCNT = 0x0400;
 	
 	drawtext(0,"Oh no! PocketNES crashed!",0);
