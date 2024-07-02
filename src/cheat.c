@@ -187,7 +187,7 @@ int add_cheat(u16 address, u8 value)
 {
 	u8* cheats=cheatfinder_cheats;
 	u32 element=num_cheats*3;
-	int i;
+	u32 i;
 	if (num_cheats<MAX_CHEATS)
 	{
 		//'012abcdefghijklmno' to
@@ -222,7 +222,7 @@ char* real_address(u16 addr)
 
 void do_cheats(void)
 {
-	int i;
+	u32 i;
 	u8* cheats=cheatfinder_cheats;
 	u8 data;
 	u16 addr;

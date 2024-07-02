@@ -127,7 +127,7 @@ void init_speed_hacks(){}
 
 //for Compy, overwrite the GBA header with the quickhackfinder ins table to save 256 bytes
 
-static const u8 *const quickhackfinder_ins_table = 0x02000000;
+static const u8 *const quickhackfinder_ins_table = (const u8*)0x02000000;
 
 APPEND_DATA const u8 quickhackfinder_ins_table_ap[]={
 0xff,0xa1,0x01,0x21,0x88,0x09,0x22,0x16,0x19,0x33,0x06,0x24,0xfe,0x95,0x01,0x15,0x21,0x20,0x68,0x3f,0x20,0x76,0x8c,0x01,0x7f,0x35,0xaf,0x20,0x4f,0xf1,0xa8,0xa1,0x8e
@@ -255,6 +255,7 @@ static const u8 *find_hack(const u8 *start_pc, const u8 *branchpc, const u8 *las
 		{
 		case 6:  //"math on A", for now just ASL A
 			if (!math_a_okay) return NULL;
+			//fall through
 		case 0:  //implied addressing mode
 		case 2:  //immediate addressing mode
 			total_cycles+=2;

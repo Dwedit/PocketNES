@@ -16,6 +16,10 @@
 */
 
 extern romheader mb_header;
+APPEND void pocketnes_fade_from_white();
+#if COMPY
+APPEND void build_byte_reverse_table();
+#endif
 
 //const unsigned __fp_status_arm=0x40070000;
 EWRAM_BSS u8 *textstart;//points to first NES rom (initialized by boot.s)
@@ -122,7 +126,7 @@ APPEND void C_entry()
 	if(pogoshell)
 	{
 		//find the filename
-		volatile char *s=(volatile char*)0x0203fc08;
+		const volatile char *s=(const volatile char*)0x0203fc08;
 		//0203FC08 contains argv[0], 00, then argv[1].
 		//advance past first null
 		while (*s++ != 0);

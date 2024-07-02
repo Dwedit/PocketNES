@@ -66,8 +66,6 @@ MEMORY {
 	vram1   : ORIGIN = 0x06003000, LENGTH = 4K
 }
 
-
-
 __text_start	=	ORIGIN(rom);
 __eheap_end	=	ORIGIN(ewram) + LENGTH(ewram);
 __iwram_start	=	ORIGIN(iwram);
@@ -79,11 +77,17 @@ __irq_flags	=	0x03007ff8;
 SECTIONS
 {
 	. = __text_start;
-	.init :
+	.crt0 :
 	{
-		KEEP (*(.init))
+		KEEP (*(.crt0))
 		. = ALIGN(4);
 	} >rom =0xff
+
+
+	.init :
+	{
+		KEEP (*(SORT_NONE(.init)))
+	} >rom
 
 	.plt :
 	{
@@ -272,6 +276,7 @@ SECTIONS
 	{
 		*(.ewram)
 		*(SORT_BY_NAME(.ewram.*))
+		*(SORT_BY_NAME(.ewram*))
 		. = ALIGN(4);  /* REQUIRED. LD is flaky without it. */
 		__ewram_end = ABSOLUTE(.);
 	}>ewram = 0xff

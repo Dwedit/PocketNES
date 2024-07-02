@@ -58,7 +58,7 @@ CFLAGS	:=	-g -Wall -Os\
 			-mcpu=arm7tdmi -mtune=arm7tdmi\
  			-fomit-frame-pointer\
 			-ffast-math \
-			-std=c99 \
+			-std=gnu99 \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE)
