@@ -152,6 +152,7 @@ semiclean:
 clean: semiclean
 	@echo deleting main binary
 	@rm -f $(TARGET).gba
+	$(MAKE) -C . -f Makefile_mb clean
 
 #---------------------------------------------------------------------------------
 else
@@ -172,7 +173,13 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 $(OUTPUT).gba	:	$(OUTPUT).elf
 
-$(OUTPUT).elf	:	$(OFILES) gba_crt0_my.o
+$(OUTPUT).elf	:	$(OFILES) gba_crt0_my.o gba_cart_my.ld
+
+#rule for building Multiboot version first so that bindata.s can be built
+bindata.o: bindata.s ../pocketnes_mb.gba font2.lz77 fontpal.bin
+
+../pocketnes_mb.gba :
+	$(MAKE) -C .. -f Makefile_mb
 
 -include $(DEPENDS)
 

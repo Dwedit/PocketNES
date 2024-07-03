@@ -149,11 +149,11 @@ all	: $(BUILD)
 #---------------------------------------------------------------------------------
 semiclean:
 	@echo deleting intermediate files...
-	@rm -fr $(BUILD) $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET)_mb.elf
 
 clean: semiclean
 	@echo deleting main binary
-	@rm -f $(TARGET).gba
+	@rm -f $(TARGET)_mb.gba
 
 #---------------------------------------------------------------------------------
 else
@@ -174,7 +174,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 $(OUTPUT)_mb.gba	:	$(OUTPUT)_mb.elf
 
-$(OUTPUT)_mb.elf	:	$(OFILES) gba_crt0_my.o
+$(OUTPUT)_mb.elf	:	$(OFILES) gba_crt0_my.o gba_mb_my.ld
 
 -include $(DEPENDS)
 
