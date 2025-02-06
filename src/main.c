@@ -250,6 +250,13 @@ APPEND void C_entry()
 	}
 #else
 	roms = 1;
+	{
+		//emuflags is initialized by code that draws the rom menu with a selected game, we don't have that here
+		//instead, load the flags from the first game and mix with existing flags
+		romheader *ri = (romheader*)findrom(0);
+		int opt = (((*ri).flags|(*ri).spritefollow<<16) & ~1) | 2;
+		emuflags = (emuflags & 0x300) | opt;
+	}
 #endif
 	//Load VRAM code, install interrupt handlers, clear other VRAM, make text ready to display, etc...
 	take_ownership_of_vram(true);
