@@ -59,31 +59,15 @@ depack:
  .subsection 5
  .align
  .pool
-
-@@ap_getbit
-@@	movs mask, mask, ror #1
-@@@	bcc getbit_continue
-@@	ldrbcs byte,[src],#1
-@@@getbit_continue
-@@	tst byte,byte,mask
-@@	bx lr
-
-@@ap_getbitgamma
-@@	movs gamma,gamma,lsl #1
-@@	movs mask,mask,ror #1
-@@	bcc getbit_continue2
-@@	ldrb byte,[src],#1
-@@getbit_continue2
-@@	tst byte,byte,mask
-@@	addne gamma,gamma,#1
-@@	bx lr
-
 	@depack enters here
 aploop_nolwm:
 	mov lwm,#0
 aploop:
 	GETBIT
 	bne apbranch1
+	@bits: 0
+	@single literal byte
+	@clears LWM
 	ldrb temp,[src],#1
 	strb temp,[dest],#1
 	b aploop_nolwm
@@ -92,7 +76,9 @@ apbranch1:
 	beq apbranch2
 	GETBIT
 	beq apbranch3
-	@get an offset
+	@bits: xxxx111
+	@4-bit offset, if offset is zero, use literal zero instead
+	@does not affect recent offset, clears LWM
 	mov gamma,#0
 	GETBIT
 	addne gamma,gamma,#1
@@ -104,8 +90,12 @@ apbranch1:
 	strb gamma,[dest],#1
 	b aploop_nolwm
 apbranch3:
-	@use 7 bit offset, length = 2 or 3
-	@if a zero is encountered here, it's EOF
+	@bits: 011
+	@byte = [src++]
+	@recent offset = byte >> 1
+	@length = 2 + (byte & 1)
+	@If offset is zero, it's end of file.
+	@set LWM
 	ldrb gamma,[src],#1
 	movs recentoff,gamma,lsr #1
 	beq done
@@ -118,8 +108,18 @@ apbranch3:
 	mov lwm,#1
 	b aploop
 apbranch2:
-	@use a gamma code * 256 for offset, another gamma code for length
-
+	@Not LWM, bits: <gamma2><gamma1>01, gamma1 > 2: subtract additional 1 from gamma1, otherwise same as LWM
+	@LWM, bits: <gamma2><gamma1>01
+	@  recent offset = <gamma1 - 2> * 256 + [src++]
+	@  length = <gamma2>
+	@  if recent offset >= 32000, length++
+	@  if recent offset >= 1280, length++
+	@  if recent offset < 128, length+=2
+	@  set LWM
+	@Not LWM, bits: <gamma2>0001  (gamma1 == 2, meaning two zero bits)
+	@  offset = previous recent offset
+	@  length = gamma2
+	@  set LWM
 	bl ap_getgamma
 	sub gamma,gamma,#2
 	cmp lwm,#0
@@ -128,7 +128,8 @@ apbranch2:
 	cmp gamma,#0
 	bne ap_not_zero_gamma
 
-	@if gamma code is 2, use old recent offset, and a new gamma code for length
+	@This point is Not LWM, value of gamma1 is 2, (bits: <gamma2>0001)
+	@Use old recent offset, read gamma2 for length
 	bl ap_getgamma
 copyloop1:
 	ldrb temp,[dest,-recentoff]
@@ -138,12 +139,15 @@ copyloop1:
 	b aploop
 	
 ap_not_zero_gamma:
+	@This point is Not LWM, Value of gamma1 > 2, (bits: <gamma2><gamma1>01)
+	@we subtract an additional 1 from gamma1, and proceed to LWM case
 	sub gamma,gamma,#1
 ap_is_lwm:
+	@This point is LWM, (bits: <gamma2><gamma1>01)
 	ldrb temp,[src],#1
 	add recentoff,temp,gamma,lsl #8
 	bl ap_getgamma
-	@gamma=length
+	@length = gamma2
 	cmp recentoff,#32000
 	addge gamma,gamma,#1
 	cmp recentoff,#1280
