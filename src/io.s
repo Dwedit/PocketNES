@@ -23,7 +23,7 @@
 	.endif
 	global_func vbaprint
 	global_func waitframe
-@	global_func LZ77UnCompVram
+	global_func LZ77UnCompVram
 	global_func CheckGBAVersion
 	.global empty_io_w_hook
 	.global empty_io_r_hook
@@ -43,9 +43,9 @@ breakpoint:
 vbaprint:
 	swi 0xFF0000		@!!!!!!! Doesn't work on hardware !!!!!!!
 	bx lr
-@LZ77UnCompVram:
-@	swi 0x120000
-@	bx lr
+LZ77UnCompVram:
+	swi 0x120000
+	bx lr
 waitframe:
 VblWait:
 	mov r0,#0				@don't wait if not necessary
