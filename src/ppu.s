@@ -2267,7 +2267,7 @@ nohit:
 	adrl_ r12,sprite_zero_timeout
 	bl_long install_timeout_2
 0:
-	b_long _GO
+	b_long2 _GO
 .popsection
 
 store_palette_force:
@@ -2459,7 +2459,7 @@ turn_screen_off:
 	cmp r0,#1
 	mov r0,#2
 	streqb_ r0,okay_to_run_nes_chr_update_this_frame
-	bleq_long nes_chr_update
+	bleq_long2 nes_chr_update
 	.endif
 	
 	@DONE: run scroll catchups, backswitch catchups, MMC3 catchups, more?

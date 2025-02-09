@@ -262,10 +262,10 @@ romswitch:
 	mov addy,lr
 	bne_long2 rs0
 
-	bl_long mapCD_  @@
+	bl_long2 mapCD_  @@
 	ldrb_ r0,bank0
 	mov lr,addy
-	b_long map89_  @@
+	b_long2 map89_  @@
 MAPPER_OVERLAY_TEXT(0)
 rs0:
 	bl_long map89_  @@
@@ -280,7 +280,7 @@ write1:		@$A000-A001
 	tst addy,#1
 	movne pc,lr
 	tst r0,#1
-	b_long mirror2V_
+	b_long2 mirror2V_
 @----------------------------------------------------------------------------
 write2:		@C000-C001
 @----------------------------------------------------------------------------
@@ -297,7 +297,7 @@ write2:		@C000-C001
 	add r2,r2,r1
 	str_ r2,last_mmc3_timestamp
 	
-	b_long mmc3_set_next_timeout
+	b_long2 mmc3_set_next_timeout
 @----------------------------------------------------------------------------
 write3:		@E000-E001
 @----------------------------------------------------------------------------

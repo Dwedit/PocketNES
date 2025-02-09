@@ -27,6 +27,6 @@ write4016:
 	bl_long chr01234567_
 
 	ldmfd sp!,{r0,lr}
-	b_long joy0_W
+	b_long2 joy0_W
 @----------------------------------
 	@.end

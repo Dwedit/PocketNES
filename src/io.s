@@ -379,7 +379,7 @@ refreshNESjoypads:	@call every frame
 
 	tst r2,#0x80000000
 	.if LINK
-	bne_long link_multi
+	bne_long2 link_multi
 	.endif
 
 @	tst r2,#0x40000000	@ P3/P4

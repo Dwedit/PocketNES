@@ -427,7 +427,7 @@ _4Cy:@   JMP $nnnn
 @----------------------------------------------------------------------------
 	ldr_ r0,speedhack_pc
 	cmp m6502_pc,r0
-	beq_long dobranchhackjmp
+	beq_long2 dobranchhackjmp
 _4C:
 	ldrb r0,[m6502_pc],#1
 	ldrb r1,[m6502_pc]
@@ -1183,15 +1183,15 @@ nobranch:
 dobranchhackbne:
 	ldr_ r1,speedhack_pc
 	cmp m6502_pc,r1
-	beq_long dobranchhack2
+	beq_long2 dobranchhack2
 	cmp r0,#-3
-	beq_long dobnehack
+	beq_long2 dobnehack
 	b branchhack_back
 dobranchhack:
 	ldr_ r1,speedhack_pc
 	cmp m6502_pc,r1
 	bne branchhack_back
-	b_long dobranchhack2
+	b_long2 dobranchhack2
 @----------------------------------------------------------------------------
 _F1:@   SBC ($nn),Y
 @----------------------------------------------------------------------------

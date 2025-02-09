@@ -306,7 +306,7 @@ dobranchhackjmp:
 	
 	bl usespeedhack
 6:
-	b_long _4C
+	b_long2 _4C
 
 dobranchhack2:
 	@second chance
@@ -317,7 +317,7 @@ dobranchhack2:
 	bl usespeedhack
 5:
 	ldrsb r0,[m6502_pc,#-1]
-	b_long branchhack_back
+	b_long2 branchhack_back
 	
 usespeedhack:
 	ldrb_ r2,speedhacknumber
