@@ -233,7 +233,7 @@ w8001_118_noalttest:
 	
 	tst r0,#0x80
 	stmfd sp!,{r0,lr}
-	bl_long mirror1_  @@
+	bl_long2 mirror1_  @@
 	ldmfd sp!,{r0,lr}
 	b w8001
 
