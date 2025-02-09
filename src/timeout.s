@@ -198,7 +198,7 @@ line0x:
 	bxne r1
 .endif
 
-	bl_long refreshNESjoypads	@Z=1 if communication ok
+	bl_long2 refreshNESjoypads	@Z=1 if communication ok
 	bne waitformulti		@waiting on other GBA..
 
 	ldr_ r0,AGBjoypad
@@ -431,9 +431,9 @@ vblank_handler_0:
 	stmfd sp!,{r0-r12}
 	
 	mov r0,#0
-	bl call_quickhackfinder
+	bl_long2 call_quickhackfinder
 	
-	bl_long newframe_nes_vblank
+	bl_long2 newframe_nes_vblank
 	ldmfd sp!,{r0-r12}
 	
 	ldr r0,=stat_R_clearvbl

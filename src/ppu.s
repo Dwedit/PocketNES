@@ -2265,7 +2265,7 @@ nohit:
 	adr r0,sprite_zero_handler_2
 1:
 	adrl_ r12,sprite_zero_timeout
-	bl_long install_timeout_2
+	bl_long2 install_timeout_2
 0:
 	b_long2 _GO
 .popsection
@@ -2304,7 +2304,7 @@ sprite_zero_handler_3:
 	bic cycles,cycles,#BRANCH
 	.endif
 	mov r0,#1
-	bl call_quickhackfinder
+	bl_long2 call_quickhackfinder
 @	bl set_cpu_hack
 
 	ldr r0,=ppustat_
