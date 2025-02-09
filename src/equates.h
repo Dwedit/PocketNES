@@ -775,12 +775,12 @@ _m_ ,8
 	_m_ nes_vram,4
 
 	_m_ bankbuffer_last,4*2
-	_m_ bankbuffer,4
-	_m_ dmabankbuffer,4
 	_m_ bankbuffer_line,1
 	_m_ bankbuffer_line_previous,1
 	_m_ bankbuffer_line_previous2,1
 	_m_ bankbuffer_line_previous3,1
+	_m_ bankbuffer,4
+	_m_ dmabankbuffer,4
 
 	_m_ ctrl1old,4
 	_m_ ctrl1line,1

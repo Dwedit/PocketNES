@@ -1192,7 +1192,7 @@ void clean_nes_sram() {
 #endif
 
 //quick & dirty rom checksum
-u32 checksum(u8 *p) {
+APPEND u32 checksum(u8 *p) {
 	u32 sum=0;
 	int i;
 	

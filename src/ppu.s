@@ -276,7 +276,8 @@ remap_pal:
 	orr r1,r1,r0,lsl#24
 
 	adr r2,vslist
-mp0:	ldr r0,[r2],#8
+	add r3,r2,#4
+mp0:	ldr r0,[r2],#4
 	cmp r0,r1			@find which rom...
 	beq remap
 	cmp r0,#0
@@ -292,7 +293,11 @@ nomap:
 @	bne nomap
 @	mov pc,lr
 remap:
-	ldr r1,[r2,#-4]
+	sub r2,r2,r3
+	adr r3,vslist2
+	ldrb r1,[r3,r2,lsr#2]
+	ldr r3,=vs_palmaps
+	add r1,r3,r1,lsl#6
 	@r1 = source address inside vs_palmaps
 	@r6 = destination address
 	@r5 = nes_rgb palette
@@ -318,30 +323,41 @@ mp1:
 	bne mp1
 	mov pc,lr
 
-vslist:	.word 0xfff3f318,vs_palmaps+64*0 @Freedom Force	RP2C04-0001
-	.word 0xf422f492,vs_palmaps+64*0 @Gradius				RP2C04-0001
-	.word 0x8000809c,vs_palmaps+64*0 @Hoogans Alley		RP2C04-0001
-	.word 0x80008281,vs_palmaps+64*0 @Pinball				RP2C04-0001
-	.word 0xfff3fd92,vs_palmaps+64*0 @Platoon				RP2C04-0001
-	.word 0x800080ce,vs_palmaps+64*1 @(lady)Golf			RP2C04-0002
-	.word 0x80008053,vs_palmaps+64*1 @Mach Rider			RP2C04-0002
-	.word 0xc008c062,vs_palmaps+64*1 @Castlevania			RP2C04-0002
-	.word 0x8050812f,vs_palmaps+64*1 @Slalom				RP2C04-0002
-	.word 0x85af863f,vs_palmaps+64*2 @Excitebike			RP2C04-0003
-	.word 0x859a862a,vs_palmaps+64*2 @Excitebike(a1)		RP2C04-0003
-	.word 0x8000810a,vs_palmaps+64*3 @Super Mario Bros	RP2C04-0004
-	.word 0xb578b5de,vs_palmaps+64*3 @Ice Climber			RP2C04-0004
-	.word 0xc298c325,vs_palmaps+64*3 @Clu Clu Land		RP2C04-0004
-	.word 0x804c8336,vs_palmaps+64*3 @Star Luster			RP2C04-0004
-	.word 0xc070d300,vs_palmaps+64*3 @Battle City			RP2C04-0004
-	.word 0xc298c325,vs_palmaps+64*3 @Top Gun				RP2C04-0004?
-	.word 0x800080ba,vs_palmaps+64*4 @Soccer
-	.word 0xf007f0a5,vs_palmaps+64*4 @Goonies
-	.word 0xff008005,vs_palmaps+64*4 @Dr. Mario
-@	.word 0xf1b8f375,vs_palmaps+64*? @Super Sky Kid		doesn't need palette
-@	.word 0xffdac0c4,vs_palmaps+64*? @TKO Boxing			doesn't start
-@	.word 0xf958f88f,vs_palmaps+64*3 @Super Xevious		doesn't start
-	.word 0, vs_palmaps+64*3 @prevent garbage palette for non-matched rom
+vslist:	.word 0xfff3f318 @Freedom Force	RP2C04-0001
+	.word 0xf422f492 @Gradius				RP2C04-0001
+	.word 0x8000809c @Hoogans Alley		RP2C04-0001
+	.word 0x80008281 @Pinball				RP2C04-0001
+	.word 0xfff3fd92 @Platoon				RP2C04-0001
+	.word 0x800080ce @(lady)Golf			RP2C04-0002
+	.word 0x80008053 @Mach Rider			RP2C04-0002
+	.word 0xc008c062 @Castlevania			RP2C04-0002
+	.word 0x8050812f @Slalom				RP2C04-0002
+	.word 0x85af863f @Excitebike			RP2C04-0003
+	.word 0x859a862a @Excitebike(a1)		RP2C04-0003
+	.word 0x8000810a @Super Mario Bros	RP2C04-0004
+	.word 0xb578b5de @Ice Climber			RP2C04-0004
+	.word 0xc298c325 @Clu Clu Land		RP2C04-0004
+	.word 0x804c8336 @Star Luster			RP2C04-0004
+	.word 0xc070d300 @Battle City			RP2C04-0004
+	.word 0xc298c325 @Top Gun				RP2C04-0004?
+	.word 0x800080ba @Soccer
+	.word 0xf007f0a5 @Goonies
+	.word 0xff008005 @Dr. Mario
+@	.word 0xf1b8f375 @Super Sky Kid		doesn't need palette
+@	.word 0xffdac0c4 @TKO Boxing			doesn't start
+@	.word 0xf958f88f @Super Xevious		doesn't start
+@	.word 0 @prevent garbage palette for non-matched rom  @use first 4 bytes of vslist2 as the terminating word instead
+
+vslist2:
+	.byte 0,0,0,0,0
+	.byte 1,1,1,1
+	.byte 2,2
+	.byte 3,3,3,3,3,3
+	.byte 4,4,4
+	.byte 3
+	.byte 0,0,0  @padding
+
+
 @----------------------------------------------------------------------------
 paletteinit:@	r0-r3 modified.
 @called by ui.c:  void map_palette(char gammavalue)
@@ -4891,12 +4907,12 @@ _dma3buff:	.word DMA3BUFF
 _nes_vram:	.word NES_VRAM
 
 _bankbuffer_last: .word 0,0
-_bankbuffer:	.word BANKBUFFER1
-_dmabankbuffer:	.word BANKBUFFER2
 _bankbuffer_line:	.byte 0
 _bankbuffer_line_previous:	.byte 0
 _bankbuffer_line_previous2:	.byte 0
 _bankbuffer_line_previous3:	.byte 0
+_bankbuffer:	.word BANKBUFFER1
+_dmabankbuffer:	.word BANKBUFFER2
 
 _ctrl1old:	.word 0x0440	@last write
 

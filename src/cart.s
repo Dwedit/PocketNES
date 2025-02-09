@@ -1771,77 +1771,54 @@ render_tiles_2_loop:
  .align
  .pool
 
-erase_r1_to_r2:
-	mov r0,r1
-	sub r2,r2,r1
-	mov r1,#0
-	b memset32_
+reset_list:
+	.hword cpuregs
+	.hword nexttimeout+4
+	.hword vramaddr_dummy
+	.hword y_in_sprite0
+	.if USE_BG_CACHE
+	.hword bg_cache_produce_cursor
+	.hword bg_cache_updateok+1
+	.endif
+	.hword mapperdata
+	.hword chrline_previous3+1
+	.hword reg_4000
+	.hword dmc_remaining_bits+4
+	.hword nesoamdirty
+	.hword firstframeready+1
+	.hword vram_map
+	.hword vram_map+32
+	.hword screen_off
+	.hword suppress_vbl+1
+	.hword cycles_to_run
+	.hword _dontstop
+	.hword bankbuffer_last
+	.hword bankbuffer
+reset_list_end:
+
 reset_all:
 	stmfd sp!,{r4-r12,lr}
 	
-	@bl reset_buffers
-	
 	ldr globalptr,=GLOBAL_PTR_BASE	@need ptr regs init'd
-	
-	adrl_ r1,cpuregs
-	adrl_ r2,nexttimeout+4
-	bl erase_r1_to_r2
-	
-	adrl_ r1,vramaddr_dummy
-	adrl_ r2,y_in_sprite0
-	bl erase_r1_to_r2
-
-	.if USE_BG_CACHE
-	adrl_ r1,bg_cache_produce_cursor
-	adrl_ r2,bg_cache_updateok+1
-	bl erase_r1_to_r2
-	.endif
-	
-	mov r3,#1
-	strb_ r3,vramaddrinc
-	
-	adrl_ r1,mapperdata
-	adrl_ r2,chrline_previous3+1
-	bl erase_r1_to_r2
-
-	adrl_ r1,reg_4000
-	adrl_ r2,dmc_remaining_bits+4
-	bl erase_r1_to_r2
-	
-	adrl_ r1,nesoamdirty
-	adrl_ r2,firstframeready+1
-	bl erase_r1_to_r2
-	
-	adrl_ r1,vram_map
-	adrl_ r2,vram_map+32
-	bl erase_r1_to_r2
+	adr r4,reset_list
+	mov r5,#reset_list_end - reset_list
+	mov r1,#0
+reset_all_loop:
+	ldrh r0,[r4],#2
+	ldrh r2,[r4],#2
+	sub r2,r2,r0
+	add r0,r0,globalptr
+	bl memset32
+	subs r5,r5,#4
+	bgt reset_all_loop
 	
 	adrl_ r0,nes_palette
 	ldr r1,=0x0F0F0F0F
 	mov r2,#32
 	bl memset32_
 
-	adrl_ r1,screen_off
-	adrl_ r2,suppress_vbl+1
-	bl erase_r1_to_r2
-
-	adrl_ r1,cycles_to_run
-	adrl_ r2,_dontstop
-	bl erase_r1_to_r2
-	
-	mov r0,#0
-	str_ r0,bankbuffer_last
-	str_ r0,bankbuffer_last+4
-	strb_ r0,bankbuffer_line
-	strb_ r0,ctrl1line
-	ldr r1,=0x0440
-	str_ r1,ctrl1old
-	
 	@reset self-modifying code for vram increment
-	ldrb_ r0,ppuctrl0
-	tst r0,#4
-	moveq r1,#1
-	movne r1,#32
+	mov r1,#1
 	strb_ r1,vramaddrinc
 	ldr r0,=vramaddrinc_modify1
 	strb r1,[r0]
@@ -1863,6 +1840,10 @@ reset_all:
 	ldmfd sp!,{r4-r12,lr}
 	bx lr
 
+memset32_len_480:
+	mov r2,#240*2
+	b memset32_
+
 reset_buffers:
 	stmfd sp!,{r10,lr}
 	ldr r10,=GLOBAL_PTR_BASE
@@ -1870,19 +1851,14 @@ reset_buffers:
 	ldr r1,=0x04400440
 	@clear dispcnt buffers
 	ldr_ r0,dmadispcntbuff
-	mov r2,#240*2
-	bl memset32_
+	bl memset32_len_480
 	ldr_ r0,dispcntbuff
-	mov r2,#240*2
-	bl memset32_
+	bl memset32_len_480
 	mov r1,#0
 	ldr_ r0,dmabg0cntbuff
-	mov r2,#240*2
-	bl memset32_
+	bl memset32_len_480
 	ldr_ r0,bg0cntbuff
-	mov r2,#240*2
-	bl memset32_
-	
+	bl memset32_len_480
 	
 	ldmfd sp!,{r10,lr}
 	bx lr
