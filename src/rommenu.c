@@ -251,8 +251,12 @@ int getinput() {
 #else
 void rommenu()
 {
-	cls(3);
 	loadcart(0,emuflags&0x304,1);
+	
+	ui_x = 256;
+	move_ui();
+	cls(3);
+	get_ready_to_display_text();
 }
 void rommenu_frame(){}
 #endif

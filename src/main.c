@@ -321,14 +321,12 @@ APPEND void take_ownership_of_vram(bool clear)
 	}
 	loadfont();
 	loadfontpal();
+	#if ROMMENU
 	ui_x = 0x100;
-	//#if ROMMENU
 	move_ui();
 	cls(3);
 	get_ready_to_display_text();
-	//#endif
 	ui_x = 0;
-	#if ROMMENU
 	move_ui();
 	#endif
 	
