@@ -56,11 +56,18 @@ ARCH	:=	-mthumb -mthumb-interwork
 
 DEFINES :=  -D COMPY
 
-CFLAGS	:=	-g -Wall -Os\
+#If you are building for past versions of devkitARM, change "-Oz" into "-Os"
+#and remove the lines after -std=gnu99 and before $(ARCH)
+
+CFLAGS	:=	-g -Wall -Oz\
 			-mcpu=arm7tdmi -mtune=arm7tdmi\
  			-fomit-frame-pointer\
 			-ffast-math \
 			-std=gnu99 \
+			-ffreestanding \
+			-fno-tree-loop-distribute-patterns \
+			-finline-stringops \
+			-foptimize-sibling-calls \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) $(DEFINES)
