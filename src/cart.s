@@ -112,6 +112,7 @@
 	.global NES_VRAM4
 	
 	.global mapperstate
+	.global _mapperdata
 
 	.global _twitch
 	.global _flicker
@@ -1867,6 +1868,7 @@ reset_buffers:
 
  .section .data.102, "w", %progbits
 
+_mapperdata:
 mapperstate:
 	.skip 32	@mapperdata
 	.skip 3     @padding
