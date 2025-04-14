@@ -54,9 +54,9 @@ run_counter_2:
 	@r1 = number of times to clock the counter
 1:	
 	ldr_ r0,latch	@32 bit number, MSByte is counter, LSByte is latch
-	adds r0,r0,r1,lsl#24
+	adds r0,r0,r1,lsl#24  @add the number of times to clock it
 	movccs addy,r1,lsl#24  @set carry flag if number of times to clock > 0xFF (addy trashed)
-	addcs r0,r0,r0,lsl#24
+	addcs r0,r0,r0,lsl#24  @on overflow, set counter = latch
 	str_ r0,latch
 	bxcc lr  @if counter doesn't overflow, we're done
 	@counter has overflowed if it reaches here, latch has already been assigned to counter
