@@ -2372,12 +2372,12 @@ APPEND_DATA const unsigned char MapperNumberOverlayList[] =
 	18, 19, 69, 210, 100, 
 	16, 163, 100, 
 	1, 15, 67, 105, 100, 
-	9, 10, 17, 22, 33, 42, 73, 75, 80, 228, 100, 
+	9, 10, 17, 22, 33, 42, 75, 80, 228, 100, 
 	0, 2, 3, 7, 11, 32, 34, 40, 66, 68, 70, 71, 76, 77, 78, 79, 82, 86, 88, 92, 99, 151, 152, 180, 232, 100, 
 	21, 23, 24, 25, 26, 65, 72, 85, 87, 93, 94, 97, 184, 100, 
 	5, 100,
 	73, 100,
-	20, 
+	100, 20, 0, 0
 };
 
 extern unsigned char __load_start_iwram0[], __load_start_iwram1[], __load_start_iwram2[],
@@ -2423,7 +2423,7 @@ APPEND u32 GetMapperOverlayMaxSize()
 {
 	//find overlay source size (to avoid hardcoding to 1768)
 	u32 size = 0;
-	for (int i = 0; i < ARRSIZE(MapperOverlaySource) - 1; i++)
+	for (int i = 0; i < ARRSIZE(MapperOverlaySource); i++)
 	{
 		u32 sectionSize = (u32)MapperOverlayEnd[i] - (u32)MapperOverlaySource[i];
 		if (sectionSize > size) size = sectionSize;
@@ -2439,7 +2439,7 @@ APPEND void LoadMapperOverlay(int mapperNumber)
 	u32 size = GetMapperOverlayMaxSize();
 		
 	int overlayNumber = lookup_mapper_arr(mapperNumber, MapperNumberOverlayList);
-	if (overlayNumber == 8) overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
+	if (overlayNumber == 10) overlayNumber = DEFAULT_MAPPER_OVERLAY_NUMBER;
 	unsigned char *dest = __iwram_overlay_start;
 	const unsigned char *src = MapperOverlaySource[overlayNumber];
 	memcpy32(dest, src, size);
