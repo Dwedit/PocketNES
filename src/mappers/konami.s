@@ -29,6 +29,7 @@ run_counter:
 	ldr_ r2,timestamp
 	add r2,r2,r1
 run_counter_2:
+	@r2 = timestamp to run counter to
 	add r2,r2,#12
 	ldr_ r1,counter_last_timestamp
 	str_ r2,counter_last_timestamp
@@ -39,22 +40,25 @@ run_counter_2:
 	@are IRQs enabled?
 	tst r0,#0x200
 	bxeq lr
-	tst r0,#0x040000
+	
+	tst r0,#0x040000  @04 = whether cpu cycle mode (1) or scanline mode (0)
 	bne 0f
-	@scanline mode
-	ldr r0,=0xC0300D  @1/341
-	umull addy,r1,r0,r1
+	@this is for scanline mode
+	ldr r0,=0x00C0300D  @0x100000000/341 rounded up
+	umull addy,r1,r0,r1     @addy = remainder fraction, r1 = quotient (number of elapsed scanlines)
+	@add to the fractional number
 	ldr_ r0,prescale_fraction
 	adds r0,r0,addy
 	str_ r0,prescale_fraction
-	adc r1,r1,#0
+	adc r1,r1,#0	@if it carried, add to number of elapsed scanlines
 	@r1 = number of times to clock the counter
 1:	
 	ldr_ r0,latch	@32 bit number, MSByte is counter, LSByte is latch
 	adds r0,r0,r1,lsl#24
+	movccs addy,r1,lsl#24  @set carry flag if number of times to clock > 0xFF (addy trashed)
 	addcs r0,r0,r0,lsl#24
 	str_ r0,latch
-	bxcc lr
+	bxcc lr  @if counter doesn't overflow, we're done
 	@counter has overflowed if it reaches here, latch has already been assigned to counter
 	@r2 = timestamp
 	
@@ -62,6 +66,7 @@ run_counter_2:
 	mov r1,r2
 	ldr r0,=mapper_irq_handler
 	adrl_ r12,mapper_irq_timeout
+	@r1 = target timestamp, r0 = handler, r12 = timeout list entry
 	bl_long replace_timeout_2
 	ldmfd sp!,{r1,lr}
 	b find_next_irq_2
@@ -76,16 +81,18 @@ find_next_irq:
 	sub r2,r2,cycles,asr#CYC_SHIFT
 	ldr_ r1,timestamp
 	add r1,r1,r2
+	@r1 = current timestamp now
 	add r1,r1,#12
 	str_ r1,counter_last_timestamp
 find_next_irq_2:
-	@r1 = timestamp now
+	@r1 = starting timestamp
 	ldr_ r0,latch
-	tst r0,#0x200
+	tst r0,#0x200   @return if irq disabled
 	bxeq lr
-	tst r0,#0x040000
+	tst r0,#0x040000  @check for cycle mode (1) or scanline mode (0)
 	mov r0,r0,lsr#24
 	rsb r0,r0,#0x100
+	@r0 = number of times counter will increment until it rolls past 0xFF
 	bne 2f
 	@we're in scanline mode
 	@eliminate rounding errors
@@ -95,7 +102,7 @@ find_next_irq_2:
 	mov r2,#0
 	str_ r2,prescale_fraction
 1:
-	@we have no fraction
+	@when we have a fraction, we will be at label 0 below, then jump back here
 	@r0 = irq counter
 	@r1 may be in the future now, that's what we want
 	
@@ -109,10 +116,12 @@ find_next_irq_2:
 	adrl_ addy,mapper_timeout
 	b_long replace_timeout_2
 0:
-	@we have a fraction
+	@r2 = fractional part of counter, convert the fraction to a number between 0 and 340
 	ldr addy,=341
-	rsb r2,r2,#0
 	umull r2,r0,addy,r2
+	@r0 = number between 0 and 340 of the current scanline divider
+	sub r0,addy,r0
+	@now r0 = number of times number must increase to reach 341
 	add r1,r1,r0
 	ldrb_ r0,counter
 	rsb r0,r0,#0xFF
@@ -163,6 +172,7 @@ KoCounter: @- - - - - - - - - - - - - - -
 	orr r1,r1,r0,lsl#16
 	tst r0,#2
 	orrne r1,r1,#0x00000200
+	biceq r1,r1,#0x00000200
 	streq_ r1,latch
 	bxeq lr
 	@copy latch to counter
@@ -175,6 +185,7 @@ KoCounter: @- - - - - - - - - - - - - - -
 	b find_next_irq
 
 KoIRQen: @- - - - - - - - - - - - - - -
+	@acknowledge interrupt
 	ldrb_ r0,wantirq
 	bic r0,r0,#IRQ_MAPPER
 	strb_ r0,wantirq
@@ -194,9 +205,9 @@ KoIRQen: @- - - - - - - - - - - - - - -
 0:
 	tst r0,#0x00010000
 	@if IRQ should be enabled, enable it.
-	mov r0,#0x02
-	strb_ r0,irqen
-	b find_next_irq
+	movne r0,#0x02
+	strneb_ r0,irqen
+	bne find_next_irq
 	bx lr
 
 	@.end
