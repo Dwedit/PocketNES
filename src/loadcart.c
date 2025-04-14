@@ -2375,7 +2375,9 @@ APPEND_DATA const unsigned char MapperNumberOverlayList[] =
 	9, 10, 17, 22, 33, 42, 73, 75, 80, 228, 100, 
 	0, 2, 3, 7, 11, 32, 34, 40, 66, 68, 70, 71, 76, 77, 78, 79, 82, 86, 88, 92, 99, 151, 152, 180, 232, 100, 
 	21, 23, 24, 25, 26, 65, 72, 85, 87, 93, 94, 97, 184, 100, 
-	5, 100, 20, 
+	5, 100,
+	73, 100,
+	20, 
 };
 
 extern unsigned char __load_start_iwram0[], __load_start_iwram1[], __load_start_iwram2[],
