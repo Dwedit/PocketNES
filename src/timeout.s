@@ -1157,6 +1157,7 @@ HandlersTable:
 	.word map69_handler
 	.word mmc3_screen_on
 	.word Mapper163HalfScreenHandler
+	.word mapper_73_handler
 HandlersTableEnd:
  HandlersTableSize = (HandlersTableEnd  - HandlersTable) / 4
 @ HandlersTableSize = 31

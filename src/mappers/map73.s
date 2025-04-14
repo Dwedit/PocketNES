@@ -4,7 +4,7 @@
 MAPPER_OVERLAY_TEXT(8)
 
 	global_func mapper73init
-@	global_func mapper_73_hook
+	global_func mapper_73_handler
 
  counter = mapperdata
  irqen = mapperdata+4
@@ -13,10 +13,6 @@ MAPPER_OVERLAY_TEXT(8)
 mapper73init:	@Konami Salamander (J)...
 @----------------------------------------------------------------------------
 	.word write8000,writeA000,writeC000,writeE000
-
-@	adr r0,mapper_73_hook
-@	str_ r0,scanlinehook
-
 	bx lr
 @-------------------------------------------------------
 write8000:
@@ -179,28 +175,6 @@ find_next_irq_2:
 	adr r0,mapper_73_handler
 	adrl_ addy,mapper_timeout
 	b_long replace_timeout_2
-
-@@-------------------------------------------------------
-@mapper_73_hook:
-@@------------------------------------------------------
-@	ldrb_ r0,irqen
-@	cmp r0,#0	@timer active?
-@	beq h1
-@
-@	ldr_ r0,counter
-@@	adds r0,r0,#0x71aaab		@113.66667
-@	adds r0,r0,#0x720000
-@	bcc h0
-@	mov r0,#0
-@	strb_ r0,irqen
-@	sub r0,r0,#0x10000
-@	str_ r0,counter
-@@	b irq6502
-@	b_long CheckI
-@h0:
-@	str_ r0,counter
-@h1:
-@	fetch 0
 
 @-------------------------------------------------------
 	@.end
