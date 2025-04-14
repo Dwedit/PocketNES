@@ -37,9 +37,14 @@ APPEND static void read_rom_header(u8 *nesheader)
 	//Get mapper_number and cartflags
 	{
 		u8 flags1,flags2;
+		bool isNes20;
 		flags1=nesheader[6];
 		flags2=nesheader[7];
-		if (flags2 & 0x0E) flags2=0;
+		isNes20 = (flags2 & 0x0C) == 0x08;
+		if (!isNes20 && (flags2 & 0x0E))
+		{
+			flags2 = 0;
+		}
 		mapper = (flags1 >> 4) + (flags2 & 0xF0);
 		cartflags = (flags1 & 0x0F) + ((flags2 & 0x0F)<<4);
 		//disable SRAM if running multiboot
