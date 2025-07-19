@@ -127,6 +127,7 @@ extern u8 *_vram_map[8];
 extern u8 _bank6[5];
 extern u8 _bank8[4];
 extern u8 _Cbank0[8];
+extern u8* _sprite_chr_map;
 extern u8 _nes_chr_map[8];
 extern u8 _vrompages;
 extern u8 _rompages;
@@ -600,6 +601,7 @@ extern volatile u8 _crash_disabled;
 #define bank8	_bank8
 #define Cbank0	_Cbank0
 #define nes_chr_map	_nes_chr_map
+#define sprite_chr_map	_sprite_chr_map
 #define vrompages	_vrompages
 #define rompages	_rompages
 #define readmem_tbl	_readmem_tbl

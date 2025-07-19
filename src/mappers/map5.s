@@ -70,6 +70,9 @@ mapper5init:
 @	adr r0,mapper_5_hook
 @	str_ r0,scanlinehook
 
+	adrl_ r0,chrpage0
+	str_ r0,sprite_chr_map
+
 	mov pc,lr
 @-------------------------------------------------------
 write0:

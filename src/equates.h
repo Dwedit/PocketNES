@@ -624,7 +624,9 @@ _m_ chrline_previous3,1
 
  _m_ twitch,1
  _m_ flicker,1
-_m_ ,10 @padding
+ _m_ ,2 @padding
+ _m_ ,4 @padding
+_m_ sprite_chr_map,4
 
 @############################
 

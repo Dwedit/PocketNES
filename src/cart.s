@@ -1949,7 +1949,9 @@ _flicker: .byte 1
 @padding
 	.byte 0,0
 @padding:
-	.word 0,0
+	.word 0
+_sprite_chr_map:	@for MMC5 (sprites use different mapping than backgrounds)
+	.word _nes_chr_map
 
 @----------------------------------------------------------------------------
 	@.end

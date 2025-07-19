@@ -542,6 +542,10 @@ PPU_reset:	@called with CPU reset
 @----------------------------------------------------------------------------
 	stmfd sp!,{globalptr,lr}
 	ldr globalptr,=GLOBAL_PTR_BASE
+	
+	ldr r0,=_nes_chr_map
+	str_ r0,sprite_chr_map
+	
 	mov r0,#0
 	strb_ r0,ppuctrl0	@NMI off
 	strb_ r0,ppuctrl1	@screen off
@@ -1477,7 +1481,7 @@ fine_x_handler:
 
 update_bankbuffer:
 	@destroys r3,r4,r5
-	adrl_ r0,nes_chr_map
+	ldr_ r0,sprite_chr_map
 	adr_ r1,bankbuffer_last
 	ldmia r0,{r2,r3}
 	ldmia r1,{r4,r5}
