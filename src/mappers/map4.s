@@ -69,6 +69,11 @@ mapper249init:
 	ldr_ r2,writemem_8
 	
 	cmp r0,#118
+	ldreq r2,=void
+	streq_ r2,writemem_A
+	.if PRG_BANK_SIZE == 4
+	streq_ r2,writemem_B
+	.endif
 	ldreq r2,=write0_118
 	
 	cmp r0,#245
