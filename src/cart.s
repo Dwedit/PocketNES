@@ -67,6 +67,7 @@
 	global_func mirror1_
 	global_func mirror2V_
 	global_func mirror2H_
+	global_func mirror2_
 	global_func mirror4_
 	global_func mirrorKonami_
 @	global_func chrfinish
@@ -638,6 +639,8 @@ m0011:	.word 0x8C02,NES_VRAM2+0x0000,NES_VRAM2+0x0000,NES_VRAM2+0x0400,NES_VRAM2
 	.word VRAM_name0, VRAM_name0, VRAM_name1, VRAM_name1
 m0123:	.word 0xCC02,NES_VRAM2+0x0000,NES_VRAM2+0x0400,NES_VRAM4+0x0000,NES_VRAM4+0x0400
 	.word VRAM_name0, VRAM_name1, VRAM_name2, VRAM_name3
+m2222:	.word 0x0E02,NES_VRAM4+0x0000,NES_VRAM4+0x0000,NES_VRAM4+0x0000,NES_VRAM4+0x0000
+	.word VRAM_name2, VRAM_name2, VRAM_name2, VRAM_name2
 
 	.if SAVESTATES
 @----------------------------------------------------------------------------
@@ -693,13 +696,16 @@ mirror2H_:
 	ldreq r0,=m0011
 	ldrne r0,=m0101
 	b mirrorchange
+mirror2_:
+	ldr r0,=m2222
+	b_long mirrorchange
+
 mirror4_:
 	ldr r0,=m0123
 mirrorchange:
-	ldrb_ r1,fourscreen
-	movs r1,r1
+	ldrb_ r1,cartflags
+	tst r1,#0x18  @fourscreen header flag or VS flag
 	ldrne r0,=m0123		@When "fourscreen" variable is set, ignore requested mirror change and use four screen instead
-	@TODO: NEED TO FIX FOR MMC5
 
 	stmfd sp!,{r0,r3-r5,lr}
 

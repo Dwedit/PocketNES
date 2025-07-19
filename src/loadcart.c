@@ -53,6 +53,11 @@ APPEND static void read_rom_header(u8 *nesheader)
 			cartflags&=~SRAM_;
 		}
 		fourscreen=(cartflags & 0x18)!=0;
+		if (mapper==5)
+		{
+			//MMC5 is not truly fourscreen, this is just to allocate GBA video memory for the third screen
+			fourscreen = true;
+		}
 		if (mapper==7)
 		{
 			singlescreen = true;
@@ -88,6 +93,7 @@ APPEND static void read_rom_header(u8 *nesheader)
 			singlescreen=true;
 		}
 		if (mapper==99) cartflags|=VS;
+		if (!fourscreen) cartflags &= ~0x08;
 	}
 
 	//Get rom and vrom bases, sizes, and masks

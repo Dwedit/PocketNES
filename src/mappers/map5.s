@@ -118,6 +118,9 @@ _05:
 	beq_long mirror5_1
 	cmp r0,#0xE4
 	beq_long mirror4_
+	cmp r0,#0xAA
+	cmpne r0,#0xA4   @castlevania 3 uses this value
+	beq_long mirror2_
 	eor r1,r0,r0,lsr#4
 	ands r1,r1,#0x0C
 	b_long mirror2V_
